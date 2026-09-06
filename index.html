@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#dfe4dc" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#171b19" media="(prefers-color-scheme: dark)">
+<title>Französisch Vokabeln — Übungsblatt</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jetbrainsmono-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+<!--
+  IMPECCABLE DIRECTION CONTRACT
+
+  THESIS: A closed deck of this class's 103 words, dealt back until empty.
+    Refuses the gamified study-app card stack.
+  OWN-WORLD: A Swiss examination form. Cool grey-green stock, hairline rules,
+    tracked uppercase field furniture, one correction red, one stamp green. Zero
+    radius. No cards, no cream, no serif.
+  STORY: 22:00 before the test. You fill the sheet in, correct it yourself, and
+    the points rail fills in your favour.
+  FIRST VIEWPORT: Crop marks, header rule, document number FV-103 right. Title
+    at 4.4rem, left. Three numbered fields with tickable squares. The stamped
+    action sits full-width at the sheet's foot.
+  FORM: Prüfungsblatt, candidate 6 of 7 on my list. Seed f8f6d0c9, operate.
+    Signature: the correction mark stamps off-register, ink blur to sharp.
+  FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+-->
+
+<div class="frame">
+  <div class="sheet">
+
+    <header class="sheet-head">
+      <span class="doc-kind">Übungsblatt</span>
+      <span class="doc-subject">Französisch · Wortschatz</span>
+      <span class="doc-no">FV-103</span>
+    </header>
+
+    <!-- ---------- Startbildschirm ---------- -->
+    <section id="screen-start" class="screen">
+      <div class="doc-title">
+        <h1>Französisch<br>Vokabeln</h1>
+        <p class="lede">Stell dir eine Runde zusammen und übe, bis alles sitzt.</p>
+      </div>
+
+      <div class="field">
+        <div class="field-head"><span class="field-no">1</span><h2>Wortschatz</h2><span class="field-note">Mehrfachwahl</span></div>
+        <div id="set-list" class="options"></div>
+      </div>
+
+      <div class="field">
+        <div class="field-head"><span class="field-no">2</span><h2>Richtung</h2><span class="field-note">Eine Angabe</span></div>
+        <div class="options" id="direction-options">
+          <label class="opt"><input type="radio" name="direction" value="de-fr" checked><span>Deutsch → Französisch</span></label>
+          <label class="opt"><input type="radio" name="direction" value="fr-de"><span>Französisch → Deutsch</span></label>
+          <label class="opt"><input type="radio" name="direction" value="mixed"><span>Gemischt</span></label>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-head"><span class="field-no">3</span><h2>Modus</h2><span class="field-note">Eine Angabe</span></div>
+        <div class="options" id="mode-options">
+          <label class="opt"><input type="radio" name="mode" value="write" checked><span>Schreiben</span></label>
+          <label class="opt"><input type="radio" name="mode" value="choice"><span>Auswählen</span></label>
+          <label class="opt"><input type="radio" name="mode" value="reveal"><span>Aufdecken</span></label>
+        </div>
+      </div>
+
+      <p id="start-hint" class="hint" role="alert"></p>
+      <button id="btn-start" class="primary">Los geht's</button>
+    </section>
+
+    <!-- ---------- Quiz ---------- -->
+    <section id="screen-quiz" class="screen hidden">
+      <header class="bar">
+        <button id="btn-quit" class="ghost" title="Runde beenden" aria-label="Runde beenden">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg>
+        </button>
+        <div class="progress">
+          <div class="progress-track"><div id="progress-fill"></div></div>
+          <span id="progress-text">0 / 0</span>
+        </div>
+        <span id="streak" class="streak" aria-live="polite"></span>
+      </header>
+
+      <div class="item">
+        <p id="prompt-lang" class="label"></p>
+        <p id="prompt" class="prompt"></p>
+
+        <form id="write-form" class="mode">
+          <label class="field-label" for="answer">Deine Antwort</label>
+          <input id="answer" type="text" autocomplete="off" autocorrect="off"
+                 autocapitalize="off" spellcheck="false" placeholder="Antwort eintragen">
+          <button type="submit" class="primary">Prüfen</button>
+        </form>
+
+        <div id="choice-box" class="mode hidden"></div>
+
+        <div id="reveal-box" class="mode hidden">
+          <button id="btn-reveal" class="primary">Aufdecken</button>
+          <div id="reveal-knew" class="hidden two">
+            <button id="btn-knew" class="good">Gewusst</button>
+            <button id="btn-unknown" class="bad">Nicht gewusst</button>
+          </div>
+        </div>
+
+        <div id="feedback" class="feedback hidden" aria-live="polite">
+          <span class="mark" aria-hidden="true">
+            <svg class="m-good" viewBox="0 0 24 24" focusable="false"><path d="M3 13.5 9.5 20 21 4"/></svg>
+            <svg class="m-near" viewBox="0 0 24 24" focusable="false"><path d="M3 11.5 9 17.5 20 4"/><path d="M13 20h8"/></svg>
+            <svg class="m-bad" viewBox="0 0 24 24" focusable="false"><path d="M4 4 20 20M20 4 4 20"/></svg>
+          </span>
+          <p id="feedback-title"></p>
+          <p id="feedback-solution" class="solution"></p>
+          <p id="feedback-example" class="example"></p>
+          <button id="btn-next" class="primary">Weiter</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- Ende ---------- -->
+    <section id="screen-end" class="screen hidden">
+      <div class="doc-title">
+        <h1>Fertig</h1>
+        <p class="lede">Das hast du in dieser Runde geschafft.</p>
+      </div>
+
+      <div class="field">
+        <div class="field-head"><span class="field-no">4</span><h2>Auswertung</h2><span class="field-note">Diese Runde</span></div>
+        <ul id="summary" class="summary"></ul>
+      </div>
+
+      <button id="btn-again-hard" class="primary hidden">Schwierige nochmal</button>
+      <button id="btn-home" class="ghost-wide">Zurück zum Start</button>
+    </section>
+
+    <footer class="sheet-foot">
+      <span>Einstellungen bleiben auf diesem Gerät</span>
+      <span class="foot-no">103 Wörter · 3 Aufgaben</span>
+    </footer>
+
+  </div>
+</div>
+
+<script src="/words.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
