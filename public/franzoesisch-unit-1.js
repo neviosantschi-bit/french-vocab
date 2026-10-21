@@ -1,8 +1,8 @@
-// Vocabulaire — abgetippt aus den Fotos der Vokabelliste.
+// Französisch, Unit … — abgetippt aus den Fotos der Vokabelliste.
 // fr / de = die zwei Spalten, example = Beispielsatz aus der dritten Spalte.
 // accept = zusaetzlich erlaubte Schreibweisen (z. B. weibliche Form bei "/e").
 
-const WORDS = [
+const FRANZOESISCH_UNIT_1 = [
   // ---------- Objectif 1 ----------
   { set: "Objectif 1", fr: "un internat", de: "ein Internat",
     example: "Cet internat n'est pas une école de rêve." },
@@ -196,4 +196,3 @@ const WORDS = [
     example: "Je dis bonjour à ma voisine." },
 ];
 
-const SETS = ["Objectif 1", "Objectif 2", "Objectif 3"];

@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#dfe4dc" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#171b19" media="(prefers-color-scheme: dark)">
-<title>Französisch Vokabeln — Übungsblatt</title>
+<title>Lernblatt — Übungsblatt</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -17,7 +17,7 @@
 <!--
   IMPECCABLE DIRECTION CONTRACT
 
-  THESIS: A closed deck of this class's 103 words, dealt back until empty.
+  THESIS: A closed deck of this class's test material, dealt back until empty.
     Refuses the gamified study-app card stack.
   OWN-WORLD: A Swiss examination form. Cool grey-green stock, hairline rules,
     tracked uppercase field furniture, one correction red, one stamp green. Zero
@@ -37,29 +37,66 @@
 
     <header class="sheet-head">
       <span class="doc-kind">Übungsblatt</span>
-      <span class="doc-subject">Französisch · Wortschatz</span>
-      <span class="doc-no">FV-103</span>
+      <span id="doc-subject" class="doc-subject">Alle Fächer</span>
+      <span id="doc-no" class="doc-no">KL</span>
     </header>
 
-    <!-- ---------- Startbildschirm ---------- -->
-    <section id="screen-start" class="screen">
+    <!-- ---------- Fächer ---------- -->
+    <section id="screen-home" class="screen">
       <div class="doc-title">
-        <h1>Französisch<br>Vokabeln</h1>
+        <h1>Lernblatt</h1>
+        <p class="lede">Such dir ein Fach aus und übe für den nächsten Test.</p>
+      </div>
+
+      <div class="field">
+        <div class="field-head"><span class="field-no">1</span><h2>Fach</h2><span class="field-note">Eine Angabe</span></div>
+        <div id="subject-list" class="picks"></div>
+      </div>
+    </section>
+
+    <!-- ---------- Units ---------- -->
+    <section id="screen-unit" class="screen hidden">
+      <nav class="bar crumbs">
+        <button class="ghost back" data-back="home" title="Zurück" aria-label="Zurück">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 12H5M11 5l-7 7 7 7"/></svg>
+        </button>
+        <span class="crumb">Fächer</span>
+      </nav>
+
+      <div class="doc-title">
+        <h1 id="unit-title"></h1>
+        <p class="lede">Welche Unit kommt im Test?</p>
+      </div>
+
+      <div class="field">
+        <div class="field-head"><span class="field-no">2</span><h2>Unit</h2><span class="field-note">Eine Angabe</span></div>
+        <div id="unit-list" class="picks"></div>
+        <p id="unit-empty" class="empty hidden">Hier ist noch nichts eingetragen. Der Stoff für dieses Fach kommt bald.</p>
+      </div>
+    </section>
+
+    <!-- ---------- Runde einstellen ---------- -->
+    <section id="screen-start" class="screen hidden">
+      <nav class="bar crumbs">
+        <button class="ghost back" data-back="unit" title="Zurück" aria-label="Zurück">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 12H5M11 5l-7 7 7 7"/></svg>
+        </button>
+        <span id="start-crumb" class="crumb"></span>
+      </nav>
+
+      <div class="doc-title">
+        <h1 id="start-title"></h1>
         <p class="lede">Stell dir eine Runde zusammen und übe, bis alles sitzt.</p>
       </div>
 
       <div class="field">
-        <div class="field-head"><span class="field-no">1</span><h2>Wortschatz</h2><span class="field-note">Mehrfachwahl</span></div>
+        <div class="field-head"><span class="field-no">1</span><h2>Teile</h2><span class="field-note">Mehrfachwahl</span></div>
         <div id="set-list" class="options"></div>
       </div>
 
       <div class="field">
         <div class="field-head"><span class="field-no">2</span><h2>Richtung</h2><span class="field-note">Eine Angabe</span></div>
-        <div class="options" id="direction-options">
-          <label class="opt"><input type="radio" name="direction" value="de-fr" checked><span>Deutsch → Französisch</span></label>
-          <label class="opt"><input type="radio" name="direction" value="fr-de"><span>Französisch → Deutsch</span></label>
-          <label class="opt"><input type="radio" name="direction" value="mixed"><span>Gemischt</span></label>
-        </div>
+        <div class="options" id="direction-options"></div>
       </div>
 
       <div class="field">
@@ -136,18 +173,19 @@
       </div>
 
       <button id="btn-again-hard" class="primary hidden">Schwierige nochmal</button>
-      <button id="btn-home" class="ghost-wide">Zurück zum Start</button>
+      <button id="btn-home" class="ghost-wide">Zurück zur Auswahl</button>
     </section>
 
     <footer class="sheet-foot">
       <span>Einstellungen bleiben auf diesem Gerät</span>
-      <span class="foot-no">103 Wörter · 3 Aufgaben</span>
+      <span id="foot-no" class="foot-no"></span>
     </footer>
 
   </div>
 </div>
 
-<script src="/words.js"></script>
+<script src="/franzoesisch-unit-1.js"></script>
+<script src="/subjects.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

@@ -58,19 +58,139 @@ function grade(input, entry, lang) {
   return "bad";
 }
 
+/* ---------------- Fach und Unit ---------------- */
+
+// Was gerade gewaehlt ist: { subject, unit, sets }.
+let current = { subject: null, unit: null, sets: [] };
+
+const setOf = (entry) => entry.set || "Alle";
+
+function unitSets(unit) {
+  const out = [];
+  unit.entries.forEach((e) => {
+    if (!out.includes(setOf(e))) out.push(setOf(e));
+  });
+  return out;
+}
+
+function countLabel(n) {
+  return n + (n === 1 ? " Eintrag" : " Einträge");
+}
+
+function setHeader(subject, unit) {
+  $("doc-subject").textContent = subject
+    ? subject.name + (unit ? " · " + unit.name : "")
+    : "Alle Fächer";
+  $("doc-no").textContent = subject
+    ? subject.code + (unit ? "-" + (subject.units.indexOf(unit) + 1) : "")
+    : "KL";
+  if (unit) {
+    $("foot-no").textContent =
+      countLabel(unit.entries.length) + " · " + unitSets(unit).length + " Teile";
+  } else if (subject) {
+    $("foot-no").textContent =
+      subject.units.length + (subject.units.length === 1 ? " Unit" : " Units");
+  } else {
+    $("foot-no").textContent = SUBJECTS.length + " Fächer";
+  }
+}
+
+function pickButton(code, name, note, empty, onClick) {
+  const b = document.createElement("button");
+  b.className = "pick" + (empty ? " is-empty" : "");
+  b.innerHTML =
+    '<span class="pick-code"></span><span class="pick-name"></span><span class="pick-note"></span>';
+  b.querySelector(".pick-code").textContent = code;
+  b.querySelector(".pick-name").textContent = name;
+  b.querySelector(".pick-note").textContent = note;
+  b.addEventListener("click", onClick);
+  return b;
+}
+
+function showHome() {
+  current = { subject: null, unit: null, sets: [] };
+  const box = $("subject-list");
+  box.innerHTML = "";
+  SUBJECTS.forEach((subject) => {
+    const n = subject.units.length;
+    box.appendChild(
+      pickButton(
+        subject.code,
+        subject.name,
+        n ? n + (n === 1 ? " Unit" : " Units") : "Noch leer",
+        !n,
+        () => showUnits(subject)
+      )
+    );
+  });
+  setHeader(null, null);
+  showScreen("home");
+}
+
+function showUnits(subject) {
+  current = { subject: subject, unit: null, sets: [] };
+  $("unit-title").textContent = subject.name;
+  const box = $("unit-list");
+  box.innerHTML = "";
+  subject.units.forEach((unit, i) => {
+    box.appendChild(
+      pickButton(String(i + 1), unit.name, countLabel(unit.entries.length),
+        !unit.entries.length, () => showSetup(unit))
+    );
+  });
+  box.classList.toggle("hidden", !subject.units.length);
+  $("unit-empty").classList.toggle("hidden", subject.units.length > 0);
+  setHeader(subject, null);
+  showScreen("unit");
+}
+
+function showSetup(unit) {
+  const subject = current.subject;
+  current = { subject: subject, unit: unit, sets: unitSets(unit) };
+  $("start-crumb").textContent = subject.name;
+  $("start-title").textContent = subject.name + " — " + unit.name;
+  $("start-hint").textContent = "";
+  buildDirections(subject);
+  const settings = loadSettings();
+  buildSetList(settings);
+  applySettings(settings);
+  setHeader(subject, unit);
+  showScreen("start");
+}
+
+function buildDirections(subject) {
+  const [a, b] = subject.sides;
+  const box = $("direction-options");
+  box.innerHTML = "";
+  [
+    ["forward", a.name + " → " + b.name],
+    ["back", b.name + " → " + a.name],
+    ["mixed", "Gemischt"],
+  ].forEach(([value, text]) => {
+    const label = document.createElement("label");
+    label.className = "opt";
+    label.innerHTML = '<input type="radio" name="direction" value="' + value + '"><span></span>';
+    label.querySelector("span").textContent = text;
+    box.appendChild(label);
+  });
+}
+
 /* ---------------- Einstellungen ---------------- */
 
-const STORE_KEY = "fv-settings";
+// Pro Unit gespeichert, damit jede Unit ihre eigene Auswahl behaelt.
+const storeKey = () => "lb-settings:" + current.unit.id;
 
 function loadSettings() {
-  const fallback = { sets: SETS.slice(), direction: "de-fr", mode: "write" };
+  const fallback = { sets: current.sets.slice(), direction: "forward", mode: "write" };
   try {
-    const saved = JSON.parse(localStorage.getItem(STORE_KEY));
+    const saved = JSON.parse(localStorage.getItem(storeKey()));
     if (!saved) return fallback;
-    const sets = (saved.sets || []).filter((s) => SETS.includes(s));
+    const sets = (saved.sets || []).filter((s) => current.sets.includes(s));
     return {
       sets: sets.length ? sets : fallback.sets,
-      direction: saved.direction || fallback.direction,
+      direction: ["forward", "back", "mixed"].includes(saved.direction)
+        ? saved.direction
+        : fallback.direction,
       mode: saved.mode || fallback.mode,
     };
   } catch (e) {
@@ -80,7 +200,7 @@ function loadSettings() {
 
 function saveSettings(s) {
   try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(s));
+    localStorage.setItem(storeKey(), JSON.stringify(s));
   } catch (e) {
     /* Privatmodus o.ae. - egal */
   }
@@ -89,13 +209,14 @@ function saveSettings(s) {
 function buildSetList(settings) {
   const box = $("set-list");
   box.innerHTML = "";
-  SETS.forEach((name) => {
-    const count = WORDS.filter((w) => w.set === name).length;
+  current.sets.forEach((name) => {
+    const count = current.unit.entries.filter((w) => setOf(w) === name).length;
     const label = document.createElement("label");
     label.className = "opt";
-    label.innerHTML =
-      '<input type="checkbox" value="' + name + '">' +
-      "<span>" + name + " <small>(" + count + ")</small></span>";
+    label.innerHTML = '<input type="checkbox"><span> <small></small></span>';
+    label.querySelector("input").value = name;
+    label.querySelector("span").prepend(name);
+    label.querySelector("small").textContent = "(" + count + ")";
     label.querySelector("input").checked = settings.sets.includes(name);
     box.appendChild(label);
   });
@@ -123,7 +244,7 @@ function applySettings(s) {
 let session = null;
 
 function showScreen(name) {
-  ["start", "quiz", "end"].forEach((n) => {
+  ["home", "unit", "start", "quiz", "end"].forEach((n) => {
     $("screen-" + n).classList.toggle("hidden", n !== name);
   });
 }
@@ -132,13 +253,15 @@ function startSession(pool, settings) {
   session = {
     pool: pool,
     settings: settings,
+    sides: current.subject.sides,
     queue: shuffle(pool),
     done: new Set(),
     tries: new Map(), // Eintrag -> Anzahl Fehlversuche
     streak: 0,
     bestStreak: 0,
     answered: false,
-    lang: null, // Sprache der gesuchten Antwort
+    lang: null, // Feld der gesuchten Antwort
+    promptLang: null, // Feld, das gezeigt wird
   };
   showScreen("quiz");
   nextQuestion();
@@ -161,13 +284,14 @@ function nextQuestion() {
 
   const entry = currentEntry();
   const dir = session.settings.direction;
-  const askFr = dir === "de-fr" || (dir === "mixed" && Math.random() < 0.5);
-  session.lang = askFr ? "fr" : "de";
+  const forward = dir === "forward" || (dir === "mixed" && Math.random() < 0.5);
+  const [ask, answer] = forward ? session.sides : session.sides.slice().reverse();
+  session.lang = answer.key;
+  session.promptLang = ask.key;
   session.answered = false;
 
-  const promptLang = askFr ? "de" : "fr";
-  $("prompt-lang").textContent = askFr ? "Deutsch" : "Französisch";
-  $("prompt").textContent = entry[promptLang];
+  $("prompt-lang").textContent = ask.name;
+  $("prompt").textContent = entry[ask.key];
 
   $("feedback").classList.add("hidden");
   updateProgress();
@@ -268,7 +392,7 @@ function endSession() {
   const hard = Array.from(s.tries.keys());
   showScreen("end");
   $("summary").innerHTML =
-    "<li><span>Wörter gelernt</span><span>" + s.done.size + "</span></li>" +
+    "<li><span>Gelernt</span><span>" + s.done.size + "</span></li>" +
     "<li><span>Beim ersten Mal richtig</span><span>" + (s.done.size - hard.length) + "</span></li>" +
     "<li><span>Mussten wiederholt werden</span><span>" + hard.length + "</span></li>" +
     "<li><span>Längste Serie</span><span>" + s.bestStreak + "</span></li>";
@@ -279,19 +403,24 @@ function endSession() {
 
 /* ---------------- Verdrahtung ---------------- */
 
-const settings = loadSettings();
-buildSetList(settings);
-applySettings(settings);
+showHome();
+
+document.querySelectorAll("[data-back]").forEach((b) => {
+  b.addEventListener("click", () => {
+    if (b.dataset.back === "home") showHome();
+    else showUnits(current.subject);
+  });
+});
 
 $("btn-start").addEventListener("click", () => {
   const s = readSettings();
   if (!s.sets.length) {
-    $("start-hint").textContent = "Wähle mindestens einen Wortschatz aus.";
+    $("start-hint").textContent = "Wähle mindestens einen Teil aus.";
     return;
   }
   $("start-hint").textContent = "";
   saveSettings(s);
-  startSession(WORDS.filter((w) => s.sets.includes(w.set)), s);
+  startSession(current.unit.entries.filter((w) => s.sets.includes(setOf(w))), s);
 });
 
 $("write-form").addEventListener("submit", (e) => {
@@ -304,7 +433,7 @@ $("write-form").addEventListener("submit", (e) => {
 
 $("btn-reveal").addEventListener("click", () => {
   $("prompt").textContent =
-    currentEntry()[session.lang === "fr" ? "de" : "fr"] +
+    currentEntry()[session.promptLang] +
     "  →  " +
     currentEntry()[session.lang];
   $("btn-reveal").classList.add("hidden");

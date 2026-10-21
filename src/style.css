@@ -634,6 +634,74 @@ button {
 
 #feedback .primary { grid-column: 1 / -1; }
 
+/* ---------------- Fach- und Unit-Auswahl ---------------- */
+
+.crumbs .back:hover { border-color: var(--ink); color: var(--ink); }
+
+.crumb {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.picks { border-bottom: 1px solid var(--rule); }
+
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 15px 12px 15px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+  text-align: left;
+  font-size: 1.0625rem;
+  transition: background 140ms var(--ease);
+}
+.pick:last-child { border-bottom: 0; }
+.pick:hover { background: var(--band); }
+
+.pick-code {
+  flex: none;
+  min-width: 40px;
+  padding: 4px 6px;
+  border: 1.5px solid var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+.pick-name { flex: 1; min-width: 0; font-weight: 600; }
+.pick-note {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.pick::after {
+  content: "→";
+  flex: none;
+  color: var(--ink-3);
+  transition: transform 140ms var(--ease), color 140ms var(--ease);
+}
+.pick:hover::after { color: var(--ink); transform: translateX(3px); }
+
+.pick.is-empty .pick-code { border-color: var(--rule); color: var(--ink-3); }
+.pick.is-empty .pick-name { font-weight: 400; color: var(--ink-2); }
+
+.empty {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-2);
+  max-width: 44ch;
+}
+
 /* ---------------- Hint ---------------- */
 
 .hint {
