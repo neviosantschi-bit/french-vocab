@@ -1,6 +1,7 @@
 // Alle Fächer der Klasse. Nur Daten.
 //
-// code  = Kürzel im Kopf des Blatts
+// short = kurzer Name für das Farbband auf der Startseite (optional)
+// Die Farbe jedes Fachs steht in src/style.css unter [data-subject="…"].
 // sides = die zwei Spalten einer Karteikarte: key ist das Feld im Eintrag,
 //         name die Beschriftung. Abgefragt wird immer eine Seite gegen die andere.
 // units = Units (Prüfungsstoff) des Fachs. Jede Unit hat eine Liste von
@@ -12,7 +13,6 @@
 const SUBJECTS = [
   {
     id: "franzoesisch",
-    code: "FR",
     name: "Französisch",
     sides: [{ key: "de", name: "Deutsch" }, { key: "fr", name: "Französisch" }],
     units: [
@@ -21,36 +21,32 @@ const SUBJECTS = [
   },
   {
     id: "mathematik",
-    code: "MA",
     name: "Mathematik",
     sides: [{ key: "q", name: "Frage" }, { key: "a", name: "Antwort" }],
     units: [],
   },
   {
     id: "deutsch",
-    code: "DE",
     name: "Deutsch",
     sides: [{ key: "q", name: "Frage" }, { key: "a", name: "Antwort" }],
     units: [],
   },
   {
     id: "englisch",
-    code: "EN",
     name: "Englisch",
     sides: [{ key: "de", name: "Deutsch" }, { key: "en", name: "Englisch" }],
     units: [],
   },
   {
     id: "nt",
-    code: "NT",
     name: "Natur und Technik",
     sides: [{ key: "q", name: "Frage" }, { key: "a", name: "Antwort" }],
     units: [],
   },
   {
     id: "rzg",
-    code: "RZG",
     name: "Räume, Zeiten, Gesellschaften",
+    short: "RZG",
     sides: [{ key: "q", name: "Frage" }, { key: "a", name: "Antwort" }],
     units: [],
   },

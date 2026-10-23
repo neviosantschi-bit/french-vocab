@@ -77,54 +77,49 @@ function countLabel(n) {
   return n + (n === 1 ? " Eintrag" : " Einträge");
 }
 
-function setHeader(subject, unit) {
-  $("doc-subject").textContent = subject
-    ? subject.name + (unit ? " · " + unit.name : "")
-    : "Alle Fächer";
-  $("doc-no").textContent = subject
-    ? subject.code + (unit ? "-" + (subject.units.indexOf(unit) + 1) : "")
-    : "KL";
-  if (unit) {
-    $("foot-no").textContent =
-      countLabel(unit.entries.length) + " · " + unitSets(unit).length + " Teile";
-  } else if (subject) {
-    $("foot-no").textContent =
-      subject.units.length + (subject.units.length === 1 ? " Unit" : " Units");
-  } else {
-    $("foot-no").textContent = SUBJECTS.length + " Fächer";
-  }
+function unitsLabel(n) {
+  return n ? n + (n === 1 ? " Unit" : " Units") : "Noch leer";
 }
 
-function pickButton(code, name, note, empty, onClick) {
-  const b = document.createElement("button");
-  b.className = "pick" + (empty ? " is-empty" : "");
-  b.innerHTML =
-    '<span class="pick-code"></span><span class="pick-name"></span><span class="pick-note"></span>';
-  b.querySelector(".pick-code").textContent = code;
-  b.querySelector(".pick-name").textContent = name;
-  b.querySelector(".pick-note").textContent = note;
-  b.addEventListener("click", onClick);
-  return b;
+// Faerbt die ganze Seite in der Farbe des Fachs (siehe style.css).
+function paint(subject) {
+  if (subject) document.body.dataset.subject = subject.id;
+  else delete document.body.dataset.subject;
 }
+
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function showHome() {
   current = { subject: null, unit: null, sets: [] };
   const box = $("subject-list");
+  box.classList.remove("opening");
   box.innerHTML = "";
   SUBJECTS.forEach((subject) => {
-    const n = subject.units.length;
-    box.appendChild(
-      pickButton(
-        subject.code,
-        subject.name,
-        n ? n + (n === 1 ? " Unit" : " Units") : "Noch leer",
-        !n,
-        () => showUnits(subject)
-      )
-    );
+    const b = document.createElement("button");
+    b.className = "band" + (subject.units.length ? "" : " is-empty");
+    b.dataset.subject = subject.id;
+    b.innerHTML =
+      '<span class="band-name"></span>' +
+      '<span class="band-meta"><span class="band-count"></span><span class="band-full"></span></span>';
+    b.querySelector(".band-name").textContent = subject.short || subject.name;
+    b.querySelector(".band-count").textContent = unitsLabel(subject.units.length);
+    if (subject.short) b.querySelector(".band-full").textContent = subject.name;
+    b.setAttribute("aria-label", subject.name + ", " + unitsLabel(subject.units.length));
+    b.addEventListener("click", () => openSubject(b, subject));
+    box.appendChild(b);
   });
-  setHeader(null, null);
+  paint(null);
   showScreen("home");
+}
+
+// Das angetippte Band waechst ueber den Bildschirm, dann kommt das Fach.
+function openSubject(band, subject) {
+  const box = $("subject-list");
+  if (box.classList.contains("opening")) return;
+  if (reducedMotion()) return showUnits(subject);
+  band.classList.add("is-open");
+  box.classList.add("opening");
+  setTimeout(() => showUnits(subject), 480);
 }
 
 function showUnits(subject) {
@@ -132,30 +127,52 @@ function showUnits(subject) {
   $("unit-title").textContent = subject.name;
   const box = $("unit-list");
   box.innerHTML = "";
-  subject.units.forEach((unit, i) => {
-    box.appendChild(
-      pickButton(String(i + 1), unit.name, countLabel(unit.entries.length),
-        !unit.entries.length, () => showSetup(unit))
-    );
+  subject.units.forEach((unit) => {
+    const b = document.createElement("button");
+    b.className = "row";
+    b.innerHTML = '<span class="row-name"></span><span class="row-count"></span>';
+    b.querySelector(".row-name").textContent = unit.name;
+    b.querySelector(".row-count").textContent = countLabel(unit.entries.length);
+    b.addEventListener("click", () => showSetup(unit));
+    box.appendChild(b);
   });
   box.classList.toggle("hidden", !subject.units.length);
+  $("unit-empty").textContent =
+    "Für " + subject.name + " ist noch nichts drin. Sobald der Stoff für den nächsten Test da ist, findest du ihn hier.";
   $("unit-empty").classList.toggle("hidden", subject.units.length > 0);
-  setHeader(subject, null);
+  paint(subject);
   showScreen("unit");
 }
 
 function showSetup(unit) {
   const subject = current.subject;
   current = { subject: subject, unit: unit, sets: unitSets(unit) };
-  $("start-crumb").textContent = subject.name;
-  $("start-title").textContent = subject.name + " — " + unit.name;
+  $("start-back").textContent = subject.name;
+  $("start-title").textContent = unit.name;
   $("start-hint").textContent = "";
   buildDirections(subject);
   const settings = loadSettings();
   buildSetList(settings);
   applySettings(settings);
-  setHeader(subject, unit);
+  paint(subject);
   showScreen("start");
+}
+
+function chip(type, name, value, text, note) {
+  const label = document.createElement("label");
+  label.className = "chip";
+  label.innerHTML = '<input type="' + type + '"><span></span>';
+  const input = label.querySelector("input");
+  input.name = name;
+  input.value = value;
+  const span = label.querySelector("span");
+  span.textContent = text;
+  if (note) {
+    const small = document.createElement("small");
+    small.textContent = note;
+    span.appendChild(small);
+  }
+  return label;
 }
 
 function buildDirections(subject) {
@@ -166,13 +183,7 @@ function buildDirections(subject) {
     ["forward", a.name + " → " + b.name],
     ["back", b.name + " → " + a.name],
     ["mixed", "Gemischt"],
-  ].forEach(([value, text]) => {
-    const label = document.createElement("label");
-    label.className = "opt";
-    label.innerHTML = '<input type="radio" name="direction" value="' + value + '"><span></span>';
-    label.querySelector("span").textContent = text;
-    box.appendChild(label);
-  });
+  ].forEach(([value, text]) => box.appendChild(chip("radio", "direction", value, text)));
 }
 
 /* ---------------- Einstellungen ---------------- */
@@ -211,12 +222,7 @@ function buildSetList(settings) {
   box.innerHTML = "";
   current.sets.forEach((name) => {
     const count = current.unit.entries.filter((w) => setOf(w) === name).length;
-    const label = document.createElement("label");
-    label.className = "opt";
-    label.innerHTML = '<input type="checkbox"><span> <small></small></span>';
-    label.querySelector("input").value = name;
-    label.querySelector("span").prepend(name);
-    label.querySelector("small").textContent = "(" + count + ")";
+    const label = chip("checkbox", "set", name, name, String(count));
     label.querySelector("input").checked = settings.sets.includes(name);
     box.appendChild(label);
   });
@@ -247,6 +253,7 @@ function showScreen(name) {
   ["home", "unit", "start", "quiz", "end"].forEach((n) => {
     $("screen-" + n).classList.toggle("hidden", n !== name);
   });
+  window.scrollTo(0, 0);
 }
 
 function startSession(pool, settings) {
@@ -274,9 +281,9 @@ function currentEntry() {
 function updateProgress() {
   const total = session.pool.length;
   const done = session.done.size;
-  $("progress-text").textContent = done + " / " + total;
+  $("progress-text").textContent = done + " von " + total;
   $("progress-fill").style.width = (total ? (done / total) * 100 : 0) + "%";
-  $("streak").textContent = session.streak >= 2 ? "Serie " + session.streak : "";
+  $("streak").textContent = session.streak >= 3 ? session.streak + " richtig in Folge" : "";
 }
 
 function nextQuestion() {
@@ -370,10 +377,10 @@ function resolve(result) {
     $("feedback-title").textContent = "Richtig";
   } else if (result === "near") {
     fb.classList.add("is-near");
-    $("feedback-title").textContent = "Richtig, achte auf die Gross-/Kleinschreibung";
+    $("feedback-title").textContent = "Richtig. Achte auf Gross- und Kleinschreibung.";
   } else {
     fb.classList.add("is-bad");
-    $("feedback-title").textContent = "Falsch, kommt später nochmal";
+    $("feedback-title").textContent = "Falsch. Kommt später nochmal.";
   }
 
   $("feedback-solution").textContent = solution;
@@ -391,11 +398,13 @@ function endSession() {
   const s = session;
   const hard = Array.from(s.tries.keys());
   showScreen("end");
-  $("summary").innerHTML =
-    "<li><span>Gelernt</span><span>" + s.done.size + "</span></li>" +
-    "<li><span>Beim ersten Mal richtig</span><span>" + (s.done.size - hard.length) + "</span></li>" +
-    "<li><span>Mussten wiederholt werden</span><span>" + hard.length + "</span></li>" +
-    "<li><span>Längste Serie</span><span>" + s.bestStreak + "</span></li>";
+  const firstTry = Array.from(s.done).filter((e) => !s.tries.has(e)).length;
+  const n = (x) => "<b>" + x + "</b>";
+  $("summary").innerHTML = s.done.size
+    ? "Du hast " + n(s.done.size) + " von " + n(s.pool.length) + " geschafft. " +
+      n(firstTry) + (firstTry === 1 ? " sass" : " sassen") + " auf Anhieb, " + n(hard.length) + " musstest du wiederholen. " +
+      "Längste Serie: " + n(s.bestStreak) + " richtig in Folge."
+    : "Diesmal hat noch nichts gesessen. Starte die Runde gleich nochmal, beim zweiten Mal geht es leichter.";
   const btn = $("btn-again-hard");
   btn.classList.toggle("hidden", hard.length === 0);
   btn.onclick = () => startSession(hard, s.settings);

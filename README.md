@@ -26,7 +26,7 @@ Output `dist`. Es ist keine weitere Konfiguration nötig.
 
 - `index.html` — Markup aller Bildschirme (Fach, Unit, Runde, Quiz, Ende),
   plus der Direction-Contract.
-- `src/style.css` — das gesamte visuelle System (Prüfungsblatt).
+- `src/style.css` — das gesamte visuelle System (Farbordner, siehe `DESIGN.md`).
 - `public/subjects.js` — alle Fächer und ihre Units. Nur Daten.
 - `public/franzoesisch-unit-1.js` — die 103 Französisch-Vokabeln (Unit …).
 - `public/app.js` — die gesamte Logik: Auswahl, Bewertung, Wiedervorlage,

@@ -2,187 +2,134 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#dfe4dc" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#171b19" media="(prefers-color-scheme: dark)">
-<title>Lernblatt — Übungsblatt</title>
+<meta name="theme-color" content="#f4f5fa">
+<title>Lernblatt</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preload" href="/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/jetbrainsmono-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
-<!--
-  IMPECCABLE DIRECTION CONTRACT
 
-  THESIS: A closed deck of this class's test material, dealt back until empty.
-    Refuses the gamified study-app card stack.
-  OWN-WORLD: A Swiss examination form. Cool grey-green stock, hairline rules,
-    tracked uppercase field furniture, one correction red, one stamp green. Zero
-    radius. No cards, no cream, no serif.
-  STORY: 22:00 before the test. You fill the sheet in, correct it yourself, and
-    the points rail fills in your favour.
-  FIRST VIEWPORT: Crop marks, header rule, document number FV-103 right. Title
-    at 4.4rem, left. Three numbered fields with tickable squares. The stamped
-    action sits full-width at the sheet's foot.
-  FORM: Prüfungsblatt, candidate 6 of 7 on my list. Seed f8f6d0c9, operate.
-    Signature: the correction mark stamps off-register, ink blur to sharp.
-  FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+<!--
+  DESIGN: Jedes Fach ist ein farbiger Ordner, wie im Schulzimmer.
+  Startseite = Stapel aus Farbbändern, die den ganzen Bildschirm füllen.
+  Ein Band antippen: es wächst über den Bildschirm und wird zum Fach.
+  Danach bleibt alles in der Farbe des Fachs, bis man zurückgeht.
 -->
 
-<div class="frame">
-  <div class="sheet">
+<!-- ---------- Fächer ---------- -->
+<main id="screen-home" class="screen home">
+  <header class="masthead">
+    <p class="wordmark">Lernblatt</p>
+    <p class="masthead-note">Welches Fach übst du heute?</p>
+  </header>
+  <nav id="subject-list" class="bands" aria-label="Fächer"></nav>
+</main>
 
-    <header class="sheet-head">
-      <span class="doc-kind">Übungsblatt</span>
-      <span id="doc-subject" class="doc-subject">Alle Fächer</span>
-      <span id="doc-no" class="doc-no">KL</span>
-    </header>
-
-    <!-- ---------- Fächer ---------- -->
-    <section id="screen-home" class="screen">
-      <div class="doc-title">
-        <h1>Lernblatt</h1>
-        <p class="lede">Such dir ein Fach aus und übe für den nächsten Test.</p>
-      </div>
-
-      <div class="field">
-        <div class="field-head"><span class="field-no">1</span><h2>Fach</h2><span class="field-note">Eine Angabe</span></div>
-        <div id="subject-list" class="picks"></div>
-      </div>
-    </section>
-
-    <!-- ---------- Units ---------- -->
-    <section id="screen-unit" class="screen hidden">
-      <nav class="bar crumbs">
-        <button class="ghost back" data-back="home" title="Zurück" aria-label="Zurück">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 12H5M11 5l-7 7 7 7"/></svg>
-        </button>
-        <span class="crumb">Fächer</span>
-      </nav>
-
-      <div class="doc-title">
-        <h1 id="unit-title"></h1>
-        <p class="lede">Welche Unit kommt im Test?</p>
-      </div>
-
-      <div class="field">
-        <div class="field-head"><span class="field-no">2</span><h2>Unit</h2><span class="field-note">Eine Angabe</span></div>
-        <div id="unit-list" class="picks"></div>
-        <p id="unit-empty" class="empty hidden">Hier ist noch nichts eingetragen. Der Stoff für dieses Fach kommt bald.</p>
-      </div>
-    </section>
-
-    <!-- ---------- Runde einstellen ---------- -->
-    <section id="screen-start" class="screen hidden">
-      <nav class="bar crumbs">
-        <button class="ghost back" data-back="unit" title="Zurück" aria-label="Zurück">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 12H5M11 5l-7 7 7 7"/></svg>
-        </button>
-        <span id="start-crumb" class="crumb"></span>
-      </nav>
-
-      <div class="doc-title">
-        <h1 id="start-title"></h1>
-        <p class="lede">Stell dir eine Runde zusammen und übe, bis alles sitzt.</p>
-      </div>
-
-      <div class="field">
-        <div class="field-head"><span class="field-no">1</span><h2>Teile</h2><span class="field-note">Mehrfachwahl</span></div>
-        <div id="set-list" class="options"></div>
-      </div>
-
-      <div class="field">
-        <div class="field-head"><span class="field-no">2</span><h2>Richtung</h2><span class="field-note">Eine Angabe</span></div>
-        <div class="options" id="direction-options"></div>
-      </div>
-
-      <div class="field">
-        <div class="field-head"><span class="field-no">3</span><h2>Modus</h2><span class="field-note">Eine Angabe</span></div>
-        <div class="options" id="mode-options">
-          <label class="opt"><input type="radio" name="mode" value="write" checked><span>Schreiben</span></label>
-          <label class="opt"><input type="radio" name="mode" value="choice"><span>Auswählen</span></label>
-          <label class="opt"><input type="radio" name="mode" value="reveal"><span>Aufdecken</span></label>
-        </div>
-      </div>
-
-      <p id="start-hint" class="hint" role="alert"></p>
-      <button id="btn-start" class="primary">Los geht's</button>
-    </section>
-
-    <!-- ---------- Quiz ---------- -->
-    <section id="screen-quiz" class="screen hidden">
-      <header class="bar">
-        <button id="btn-quit" class="ghost" title="Runde beenden" aria-label="Runde beenden">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg>
-        </button>
-        <div class="progress">
-          <div class="progress-track"><div id="progress-fill"></div></div>
-          <span id="progress-text">0 / 0</span>
-        </div>
-        <span id="streak" class="streak" aria-live="polite"></span>
-      </header>
-
-      <div class="item">
-        <p id="prompt-lang" class="label"></p>
-        <p id="prompt" class="prompt"></p>
-
-        <form id="write-form" class="mode">
-          <label class="field-label" for="answer">Deine Antwort</label>
-          <input id="answer" type="text" autocomplete="off" autocorrect="off"
-                 autocapitalize="off" spellcheck="false" placeholder="Antwort eintragen">
-          <button type="submit" class="primary">Prüfen</button>
-        </form>
-
-        <div id="choice-box" class="mode hidden"></div>
-
-        <div id="reveal-box" class="mode hidden">
-          <button id="btn-reveal" class="primary">Aufdecken</button>
-          <div id="reveal-knew" class="hidden two">
-            <button id="btn-knew" class="good">Gewusst</button>
-            <button id="btn-unknown" class="bad">Nicht gewusst</button>
-          </div>
-        </div>
-
-        <div id="feedback" class="feedback hidden" aria-live="polite">
-          <span class="mark" aria-hidden="true">
-            <svg class="m-good" viewBox="0 0 24 24" focusable="false"><path d="M3 13.5 9.5 20 21 4"/></svg>
-            <svg class="m-near" viewBox="0 0 24 24" focusable="false"><path d="M3 11.5 9 17.5 20 4"/><path d="M13 20h8"/></svg>
-            <svg class="m-bad" viewBox="0 0 24 24" focusable="false"><path d="M4 4 20 20M20 4 4 20"/></svg>
-          </span>
-          <p id="feedback-title"></p>
-          <p id="feedback-solution" class="solution"></p>
-          <p id="feedback-example" class="example"></p>
-          <button id="btn-next" class="primary">Weiter</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ---------- Ende ---------- -->
-    <section id="screen-end" class="screen hidden">
-      <div class="doc-title">
-        <h1>Fertig</h1>
-        <p class="lede">Das hast du in dieser Runde geschafft.</p>
-      </div>
-
-      <div class="field">
-        <div class="field-head"><span class="field-no">4</span><h2>Auswertung</h2><span class="field-note">Diese Runde</span></div>
-        <ul id="summary" class="summary"></ul>
-      </div>
-
-      <button id="btn-again-hard" class="primary hidden">Schwierige nochmal</button>
-      <button id="btn-home" class="ghost-wide">Zurück zur Auswahl</button>
-    </section>
-
-    <footer class="sheet-foot">
-      <span>Einstellungen bleiben auf diesem Gerät</span>
-      <span id="foot-no" class="foot-no"></span>
-    </footer>
-
+<!-- ---------- Units ---------- -->
+<main id="screen-unit" class="screen room hidden">
+  <div class="room-top">
+    <button class="pill back" data-back="home">Alle Fächer</button>
   </div>
-</div>
+  <h1 id="unit-title" class="room-title"></h1>
+  <p class="room-lede">Welche Unit kommt im Test?</p>
+  <div id="unit-list" class="rows"></div>
+  <p id="unit-empty" class="empty hidden"></p>
+</main>
+
+<!-- ---------- Runde einstellen ---------- -->
+<main id="screen-start" class="screen room hidden">
+  <div class="room-top">
+    <button id="start-back" class="pill back" data-back="unit"></button>
+  </div>
+  <h1 id="start-title" class="room-title"></h1>
+
+  <div class="setup">
+    <fieldset class="group">
+      <legend>Was willst du üben?</legend>
+      <div id="set-list" class="chips"></div>
+    </fieldset>
+
+    <fieldset class="group">
+      <legend>In welche Richtung?</legend>
+      <div id="direction-options" class="chips"></div>
+    </fieldset>
+
+    <fieldset class="group">
+      <legend>Wie willst du antworten?</legend>
+      <div id="mode-options" class="chips">
+        <label class="chip"><input type="radio" name="mode" value="write" checked><span>Schreiben</span></label>
+        <label class="chip"><input type="radio" name="mode" value="choice"><span>Auswählen</span></label>
+        <label class="chip"><input type="radio" name="mode" value="reveal"><span>Aufdecken</span></label>
+      </div>
+    </fieldset>
+  </div>
+
+  <p id="start-hint" class="hint" role="alert"></p>
+  <button id="btn-start" class="go">Runde starten</button>
+</main>
+
+<!-- ---------- Quiz ---------- -->
+<main id="screen-quiz" class="screen room quiz hidden">
+  <div class="quiz-top">
+    <button id="btn-quit" class="pill round" title="Runde beenden" aria-label="Runde beenden">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg>
+    </button>
+    <div class="track" aria-hidden="true"><div id="progress-fill"></div></div>
+    <span id="progress-text" class="count"></span>
+  </div>
+
+  <div class="ask">
+    <p id="prompt-lang" class="ask-side"></p>
+    <p id="prompt" class="ask-prompt"></p>
+    <p id="streak" class="streak" aria-live="polite"></p>
+  </div>
+
+  <div class="respond">
+    <form id="write-form" class="mode write">
+      <label class="sr" for="answer">Deine Antwort</label>
+      <input id="answer" type="text" autocomplete="off" autocorrect="off"
+             autocapitalize="off" spellcheck="false" placeholder="Deine Antwort">
+      <button type="submit" class="go">Prüfen</button>
+    </form>
+
+    <div id="choice-box" class="mode choices hidden"></div>
+
+    <div id="reveal-box" class="mode hidden">
+      <button id="btn-reveal" class="go">Lösung zeigen</button>
+      <div id="reveal-knew" class="pair hidden">
+        <button id="btn-knew" class="go">Gewusst</button>
+        <button id="btn-unknown" class="go ghost">Nicht gewusst</button>
+      </div>
+    </div>
+  </div>
+
+  <section id="feedback" class="verdict hidden" aria-live="polite">
+    <div class="verdict-inner">
+      <span class="verdict-mark" aria-hidden="true">
+        <svg class="m-good" viewBox="0 0 48 48" focusable="false"><path d="M8 25l11 11L41 12"/></svg>
+        <svg class="m-near" viewBox="0 0 48 48" focusable="false"><path d="M8 23l10 10L40 10"/><path d="M24 40h16"/></svg>
+        <svg class="m-bad" viewBox="0 0 48 48" focusable="false"><path d="M12 12l24 24M36 12 12 36"/></svg>
+      </span>
+      <p id="feedback-title" class="verdict-title"></p>
+      <p id="feedback-solution" class="verdict-solution"></p>
+      <p id="feedback-example" class="verdict-example"></p>
+      <button id="btn-next" class="go ink">Weiter</button>
+    </div>
+  </section>
+</main>
+
+<!-- ---------- Ende ---------- -->
+<main id="screen-end" class="screen room hidden">
+  <h1 class="room-title">Runde fertig</h1>
+  <p id="summary" class="tally"></p>
+  <div class="end-actions">
+    <button id="btn-again-hard" class="go hidden">Schwierige nochmal üben</button>
+    <button id="btn-home" class="go ghost">Zurück zur Auswahl</button>
+  </div>
+</main>
 
 <script src="/franzoesisch-unit-1.js"></script>
 <script src="/subjects.js"></script>
