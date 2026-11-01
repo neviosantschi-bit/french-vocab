@@ -3,13 +3,31 @@
 // Lernstand pro Benutzer, nur auf diesem Geraet (localStorage).
 // Ohne Anmeldung wird nichts gespeichert, alle Funktionen sind dann leer.
 //
-// words:  "<unitId>|<Schluessel>" -> { right, wrong, streak, last }
-// rounds: abgeschlossene Runden, neueste zuletzt
+// words:  "<unitId>|<Teil>|<Schluessel>" -> { h, last }
+//         h = die letzten Antworten, "1" richtig, "0" falsch, neueste zuletzt (z. B. "0101")
+// rounds: fertige und abgebrochene Runden, neueste zuletzt
 // days:   Tage (YYYY-MM-DD), an denen geuebt wurde
 
 const Progress = (() => {
-  const MASTERED_AT = 2; // so viele richtige Antworten in Folge = sitzt
+  const VERSION = 2;
+  const KEEP = 8; // so viele Antworten pro Wort merken
   const MAX_ROUNDS = 200;
+
+  // Zustand eines Wortes, aus seinen letzten Antworten:
+  //   neu       noch nie gefragt
+  //   falsch    zuletzt falsch und noch nie richtig
+  //   wackelig  gemischt: zuletzt falsch (aber schon mal richtig) oder richtig mit Fehler in den letzten 3
+  //   richtig   richtig, kein Fehler in den letzten 3, aber erst einmal in Folge
+  //   sitzt     mindestens zweimal in Folge richtig, kein Fehler in den letzten 3
+  const STATES = ["falsch", "wackelig", "richtig", "sitzt", "neu"];
+  const SCORE = { neu: 0, falsch: 0, wackelig: 0.35, richtig: 0.7, sitzt: 1 };
+
+  function stateOf(h) {
+    if (!h) return "neu";
+    if (h[h.length - 1] === "0") return h.includes("1") ? "wackelig" : "falsch";
+    if (h.slice(-3).includes("0")) return "wackelig";
+    return /11$/.test(h) ? "sitzt" : "richtig";
+  }
 
   const storeKey = () => {
     const u = Auth.current();
@@ -19,13 +37,16 @@ const Progress = (() => {
   function load() {
     const k = storeKey();
     if (!k) return null;
+    let old = null;
     try {
       const data = JSON.parse(localStorage.getItem(k));
-      if (data && data.words && data.rounds && data.days) return data;
+      if (data && data.v === VERSION && data.words && data.rounds && data.days) return data;
+      old = data;
     } catch (e) {
       /* faellt auf leer zurueck */
     }
-    return { words: {}, rounds: [], days: [] };
+    // Aeltere Staende zaehlten anders (und mit doppelten Schluesseln): neu anfangen, Tage behalten.
+    return { v: VERSION, words: {}, rounds: [], days: old && Array.isArray(old.days) ? old.days : [] };
   }
 
   function save(data) {
@@ -36,33 +57,26 @@ const Progress = (() => {
     }
   }
 
-  const today = () => {
-    const d = new Date();
-    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-  };
+  const dayOf = (d) =>
+    d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 
-  // Das erste Feld der Seite 1 des Faches ist der stabile Schluessel (z. B. fr).
-  const wordKey = (unit, subject, entry) => unit.id + "|" + entry[subject.sides[1].key];
+  // Eindeutig auch dann, wenn dasselbe Wort in zwei Teilen vorkommt.
+  const wordKey = (unit, subject, entry) => unit.id + "|" + (entry.set || "Alle") + "|" + entry[subject.sides[1].key];
 
   function recordAnswer(unit, subject, entry, ok) {
     const data = load();
     if (!data) return;
     const k = wordKey(unit, subject, entry);
-    const w = data.words[k] || { right: 0, wrong: 0, streak: 0, last: 0 };
-    if (ok) {
-      w.right++;
-      w.streak++;
-    } else {
-      w.wrong++;
-      w.streak = 0;
-    }
+    const w = data.words[k] || { h: "", last: 0 };
+    w.h = (w.h + (ok ? "1" : "0")).slice(-KEEP);
     w.last = Date.now();
     data.words[k] = w;
-    const t = today();
+    const t = dayOf(new Date());
     if (!data.days.includes(t)) data.days.push(t);
     save(data);
   }
 
+  // round: { subjectId, unitId, kind: "round" | "retry" | "weak", complete, ... }
   function recordRound(round) {
     const data = load();
     if (!data) return;
@@ -71,22 +85,47 @@ const Progress = (() => {
     save(data);
   }
 
-  // { total, mastered } fuer eine Unit mit Karten.
-  function unitStats(unit, subject) {
-    const data = load();
-    const entries = unit.entries || [];
-    let mastered = 0;
-    if (data) {
-      entries.forEach((e) => {
-        const w = data.words[wordKey(unit, subject, e)];
-        if (w && w.streak >= MASTERED_AT) mastered++;
-      });
-    }
-    return { total: entries.length, mastered: mastered, active: !!data };
+  const stateOfEntry = (data, unit, subject, entry) => {
+    const w = data && data.words[wordKey(unit, subject, entry)];
+    return stateOf(w ? w.h : "");
+  };
+
+  function wordState(unit, subject, entry) {
+    return stateOfEntry(load(), unit, subject, entry);
   }
 
-  // Woerter, die du am haeufigsten falsch hattest: [{ unit, entry, wrong, right }]
-  // Mit `only` nur aus dieser Unit.
+  // { total, counts: { neu, falsch, wackelig, richtig, sitzt }, score (0 bis 1), active }
+  function summarize(data, unit, subject, entries) {
+    const counts = { neu: 0, falsch: 0, wackelig: 0, richtig: 0, sitzt: 0 };
+    let points = 0;
+    entries.forEach((e) => {
+      const s = stateOfEntry(data, unit, subject, e);
+      counts[s]++;
+      points += SCORE[s];
+    });
+    const total = entries.length;
+    return { total: total, counts: counts, score: total ? points / total : 0, active: !!data };
+  }
+
+  function unitSummary(unit, subject) {
+    return summarize(load(), unit, subject, unit.entries || []);
+  }
+
+  // Pro Teil (Objectif) einer Unit: [{ name, total, counts, score }]
+  function setSummary(unit, subject) {
+    const data = load();
+    const names = [];
+    (unit.entries || []).forEach((e) => {
+      const n = e.set || "Alle";
+      if (!names.includes(n)) names.push(n);
+    });
+    return names.map((n) =>
+      Object.assign({ name: n }, summarize(data, unit, subject, unit.entries.filter((e) => (e.set || "Alle") === n)))
+    );
+  }
+
+  // Schwierige Woerter (falsch zuerst, dann wackelig), mit `only` nur aus dieser Unit:
+  // [{ unit, entry, state }]
   function weakWords(subject, limit, only) {
     const data = load();
     if (!data) return [];
@@ -94,62 +133,28 @@ const Progress = (() => {
     subject.units.filter((u) => !only || u === only).forEach((unit) => {
       (unit.entries || []).forEach((entry) => {
         const w = data.words[wordKey(unit, subject, entry)];
-        if (w && w.wrong > 0 && w.streak < MASTERED_AT) out.push({ unit, entry, wrong: w.wrong, right: w.right, last: w.last });
+        const state = stateOf(w ? w.h : "");
+        if (state === "falsch" || state === "wackelig") out.push({ unit, entry, state, last: w.last, misses: (w.h.match(/0/g) || []).length });
       });
     });
-    out.sort((a, b) => b.wrong - a.wrong || a.right - b.right || b.last - a.last);
+    out.sort((a, b) => (a.state === b.state ? b.misses - a.misses || b.last - a.last : a.state === "falsch" ? -1 : 1));
     return limit ? out.slice(0, limit) : out;
   }
 
-  // Wie oft ein Wort schon falsch war (fuer die Gewichtung beim Mischen).
-  function missesOf(unit, subject, entry) {
-    const data = load();
-    const w = data && data.words[wordKey(unit, subject, entry)];
-    return w ? w.wrong : 0;
+  // Wie unsicher ein Wort ist, 0 bis 3 (fuer die Reihenfolge beim Ueben).
+  function weight(unit, subject, entry) {
+    const s = stateOfEntry(load(), unit, subject, entry);
+    return s === "falsch" ? 3 : s === "wackelig" ? 2 : s === "neu" ? 1 : 0;
   }
 
-  function rounds(subjectId) {
+  function rounds() {
     const data = load();
-    if (!data) return [];
-    return data.rounds.filter((r) => !subjectId || r.subjectId === subjectId);
+    return data ? data.rounds : [];
   }
 
-  // Runden einer Unit, auch die Schwache-Woerter-Runden, die aus ihr kamen.
+  // Fertige normale Runden einer Unit (ohne Wiederholungen, Abbrueche und Schwache-Woerter-Runden).
   function unitRounds(unit) {
-    return rounds().filter((r) => r.unitId === unit.id || r.weakOf === unit.id);
-  }
-
-  // Pro Teil (Objectif) einer Unit: [{ name, total, mastered }]
-  function setStats(unit, subject) {
-    const data = load();
-    const out = [];
-    (unit.entries || []).forEach((e) => {
-      const name = e.set || "Alle";
-      let row = out.find((r) => r.name === name);
-      if (!row) out.push((row = { name: name, total: 0, mastered: 0 }));
-      row.total++;
-      const w = data && data.words[wordKey(unit, subject, e)];
-      if (w && w.streak >= MASTERED_AT) row.mastered++;
-    });
-    return out;
-  }
-
-  // Mit `only` nur fuer diese Unit.
-  function accuracy(subject, only) {
-    const data = load();
-    if (!data) return null;
-    let right = 0;
-    let wrong = 0;
-    subject.units.filter((u) => !only || u === only).forEach((unit) => {
-      (unit.entries || []).forEach((e) => {
-        const w = data.words[wordKey(unit, subject, e)];
-        if (w) {
-          right += w.right;
-          wrong += w.wrong;
-        }
-      });
-    });
-    return right + wrong ? Math.round((right / (right + wrong)) * 100) : null;
+    return rounds().filter((r) => r.kind === "round" && r.complete && r.unitId === unit.id);
   }
 
   // Letzte n Tage, aelteste zuerst: [{ day, practiced }]
@@ -160,23 +165,21 @@ const Progress = (() => {
     for (let i = n - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const day = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-      out.push({ day: day, practiced: set.has(day) });
+      out.push({ day: dayOf(d), practiced: set.has(dayOf(d)) });
     }
     return out;
   }
 
-  // Tage in Folge, heute nicht mitgezaehlt, falls noch nicht geuebt.
+  // Tage in Folge; heute zaehlt nicht gegen dich, wenn du noch nicht geuebt hast.
   function streakDays() {
     const days = lastDays(365).reverse();
     let n = 0;
     for (let i = 0; i < days.length; i++) {
       if (days[i].practiced) n++;
-      else if (i === 0) continue;
-      else break;
+      else if (i > 0) break;
     }
     return n;
   }
 
-  return { recordAnswer, recordRound, unitStats, setStats, unitRounds, weakWords, missesOf, rounds, accuracy, lastDays, streakDays };
+  return { STATES, stateOf, recordAnswer, recordRound, wordState, unitSummary, setSummary, weakWords, weight, rounds, unitRounds, lastDays, streakDays };
 })();

@@ -32,7 +32,7 @@ Output `dist`. Es ist keine weitere Konfiguration nötig.
 - `public/franzoesisch-unit-1.js` — die 103 Französisch-Vokabeln (Unit 1).
 - `public/franzoesisch-unit-2.js` — die Französisch-Vokabeln von Unit 2.
 - `public/auth.js` — Konto nur auf diesem Gerät (Anmelden, Registrieren, Hash mit Salz).
-- `public/progress.js` — Lernstand pro Benutzer: Wörter, Runden, Tage in Folge, schwache Wörter.
+- `public/progress.js` — Lernstand pro Benutzer: Zustand jedes Wortes (neu, falsch, wackelig, richtig, sitzt), fertige Runden, Tage in Folge, schwache Wörter.
 - `public/app.js` — die gesamte Logik: Auswahl, Bewertung, Wiedervorlage,
   Auswertung. Wird bewusst als klassisches Skript geladen und nicht gebündelt.
 

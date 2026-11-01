@@ -76,6 +76,27 @@ function unitSets(unit) {
 // Eine Unit zaehlt erst, wenn Karten oder Dateien drin sind.
 const hasContent = (unit) => (unit.entries || []).length > 0 || (unit.files || []).length > 0;
 
+const STATE_NAMES = { sitzt: "sitzt", richtig: "richtig", wackelig: "wackelig", falsch: "falsch", neu: "neu" };
+const SEG_ORDER = ["sitzt", "richtig", "wackelig", "falsch", "neu"];
+
+// Balken mit einem Stueck pro Zustand der Woerter (siehe progress.js).
+function segBar(sum) {
+  const bar = document.createElement("span");
+  bar.className = "seg";
+  bar.setAttribute("role", "img");
+  bar.setAttribute("aria-label", SEG_ORDER.map((k) => sum.counts[k] + " " + STATE_NAMES[k]).join(", "));
+  SEG_ORDER.forEach((k) => {
+    if (!sum.counts[k]) return;
+    const i = document.createElement("i");
+    i.dataset.s = k;
+    i.style.flexGrow = sum.counts[k];
+    bar.appendChild(i);
+  });
+  return bar;
+}
+
+const percent = (sum) => Math.round(sum.score * 100) + "% gelernt";
+
 function countLabel(n) {
   return n + (n === 1 ? " Eintrag" : " Einträge");
 }
@@ -119,24 +140,26 @@ function showHome() {
   showScreen("home");
 }
 
-// Kleine Anzeige im Band: wie viel von den Karten schon sitzt (nur angemeldet).
+// Kleine Anzeige im Band: wie gut die Karten des Fachs sitzen (nur angemeldet).
 function bandMeter(subject) {
-  let total = 0;
-  let mastered = 0;
-  let active = false;
+  const total = { total: 0, score: 0, active: false, counts: { neu: 0, falsch: 0, wackelig: 0, richtig: 0, sitzt: 0 } };
+  let points = 0;
   subject.units.forEach((unit) => {
     if (!(unit.entries || []).length) return;
-    const st = Progress.unitStats(unit, subject);
-    total += st.total;
-    mastered += st.mastered;
-    active = st.active;
+    const sum = Progress.unitSummary(unit, subject);
+    total.total += sum.total;
+    total.active = sum.active;
+    points += sum.score * sum.total;
+    SEG_ORDER.forEach((k) => (total.counts[k] += sum.counts[k]));
   });
-  if (!active || !total) return null;
+  if (!total.active || !total.total) return null;
+  total.score = points / total.total;
   const el = document.createElement("span");
   el.className = "band-meter";
-  el.innerHTML = '<span class="rail"><i></i></span><span class="band-meter-text"></span>';
-  el.querySelector("i").style.setProperty("--p", mastered / total);
-  el.querySelector(".band-meter-text").textContent = mastered + " von " + total + " sitzen";
+  el.appendChild(segBar(total));
+  const text = document.createElement("span");
+  text.textContent = percent(total);
+  el.appendChild(text);
   return el;
 }
 
@@ -173,14 +196,10 @@ function showUnits(subject) {
     b.innerHTML = '<span class="row-name"></span><span class="row-count"></span>';
     b.querySelector(".row-name").textContent = unit.name;
     b.querySelector(".row-count").textContent = unitCount(unit);
-    const st = (unit.entries || []).length ? Progress.unitStats(unit, subject) : null;
-    if (st && st.active) {
-      b.querySelector(".row-count").textContent = st.mastered + " von " + st.total + " sitzen";
-      const rail = document.createElement("span");
-      rail.className = "rail";
-      rail.innerHTML = "<i></i>";
-      rail.querySelector("i").style.setProperty("--p", st.mastered / st.total);
-      b.appendChild(rail);
+    const sum = (unit.entries || []).length ? Progress.unitSummary(unit, subject) : null;
+    if (sum && sum.active) {
+      b.querySelector(".row-count").textContent = percent(sum);
+      b.appendChild(segBar(sum));
     }
     b.addEventListener("click", () => (unit.entries && unit.entries.length ? showSetup(unit) : showFiles(unit)));
     box.appendChild(b);
@@ -379,23 +398,34 @@ function restorePlace() {
   showHome();
 }
 
-// Eingeloggt: Woerter, die du schon falsch hattest, kommen eher frueh dran.
+// Eingeloggt: unsichere Woerter (falsch, wackelig) und neue kommen eher frueh dran.
 function smartOrder(pool, unitOf) {
   if (!Auth.current()) return shuffle(pool);
   return pool
-    .map((e) => ({ e: e, k: Math.random() - Math.min(Progress.missesOf(unitOf(e), current.subject, e), 4) * 0.2 }))
+    .map((e) => ({ e: e, k: Math.random() - Progress.weight(unitOf(e), current.subject, e) * 0.2 }))
     .sort((a, b) => a.k - b.k)
     .map((x) => x.e);
 }
 
 // unitOf: Eintrag -> Unit (bei der Schwache-Woerter-Runde kommen sie aus mehreren Units).
-function startSession(pool, settings, unitOf) {
+// kind: "round" (normale Runde), "retry" (Schwierige nochmal), "weak" (Schwache Woerter).
+function startSession(pool, settings, unitOf, kind) {
   const unitFor = unitOf || (() => current.unit);
+  // Das Profil zeigt danach die Unit, die du gerade uebst.
+  if (current.unit) {
+    try {
+      localStorage.setItem(profileUnitKey(current.subject), current.unit.id);
+    } catch (e) {
+      /* egal */
+    }
+  }
   session = {
     pool: pool,
     settings: settings,
     sides: current.subject.sides,
     unitFor: unitFor,
+    kind: kind || "round",
+    complete: false,
     attempts: 0,
     rights: 0,
     recorded: false,
@@ -425,7 +455,10 @@ function updateProgress() {
 }
 
 function nextQuestion() {
-  if (!session.queue.length) return endSession();
+  if (!session.queue.length) {
+    session.complete = true;
+    return endSession();
+  }
 
   const entry = currentEntry();
   const dir = session.settings.direction;
@@ -542,12 +575,16 @@ function endSession() {
   const s = session;
   const hard = Array.from(s.tries.keys());
   const unitId = current.unit ? current.unit.id : "weak";
-  const before = Progress.rounds(current.subject.id).filter((r) => r.unitId === unitId).slice(-1)[0];
+  const before = Progress.rounds()
+    .filter((r) => r.kind === "round" && r.complete && r.unitId === unitId)
+    .slice(-1)[0];
   if (!s.recorded && s.attempts) {
     s.recorded = true;
     Progress.recordRound({
       subjectId: current.subject.id,
       unitId: unitId,
+      kind: s.kind,
+      complete: s.complete,
       total: s.pool.length,
       done: s.done.size,
       retried: hard.length,
@@ -566,21 +603,23 @@ function endSession() {
       n(firstTry) + (firstTry === 1 ? " sass" : " sassen") + " auf Anhieb, " + n(hard.length) + " musstest du wiederholen. " +
       "Längste Serie: " + n(s.bestStreak) + " richtig in Folge."
     : "Diesmal hat noch nichts gesessen. Starte die Runde gleich nochmal, beim zweiten Mal geht es leichter.";
-  if (before && s.done.size) {
+  if (before && s.kind === "round" && s.complete && s.done.size) {
     const prev = before.done - before.retried;
     $("summary").innerHTML += " Letztes Mal sassen " + n(prev) + " auf Anhieb.";
   }
   const btn = $("btn-again-hard");
   btn.classList.toggle("hidden", hard.length === 0);
-  btn.onclick = () => startSession(hard, s.settings, s.unitFor);
+  btn.onclick = () => startSession(hard, s.settings, s.unitFor, "retry");
 }
 
 /* ---------------- Konto ---------------- */
 
 let authMode = "login";
+let authReturn = false; // true: nach dem Anmelden zurueck, wo man war (z. B. zum Einrichten einer Runde)
 
-function showAuth(mode) {
+function showAuth(mode, returnBack) {
   authMode = mode || "login";
+  authReturn = !!returnBack;
   const signup = authMode === "signup";
   $("auth-title").textContent = signup ? "Konto erstellen" : "Anmelden";
   $("auth-submit").textContent = signup ? "Konto erstellen" : "Anmelden";
@@ -594,7 +633,7 @@ function showAuth(mode) {
 }
 
 $("auth-switch").addEventListener("click", () => showAuth(authMode === "signup" ? "login" : "signup"));
-$("auth-back").addEventListener("click", showHome);
+$("auth-back").addEventListener("click", () => (authReturn ? restorePlace() : showHome()));
 $("btn-account").addEventListener("click", () => (Auth.current() ? showProfile() : showAuth("login")));
 
 $("auth-form").addEventListener("submit", async (e) => {
@@ -609,7 +648,12 @@ $("auth-form").addEventListener("submit", async (e) => {
     return;
   }
   $("auth-form").reset();
-  showProfile();
+  if (authReturn) {
+    authReturn = false;
+    restorePlace();
+  } else {
+    showProfile();
+  }
 });
 
 /* ---------------- Profil ---------------- */
@@ -664,19 +708,18 @@ function subjectCard(subject) {
   card.dataset.subject = subject.id;
   const units = subject.units.filter((u) => (u.entries || []).length);
   const unit = chosenUnit(subject, units);
+  const sum = Progress.unitSummary(unit, subject);
   const rounds = Progress.unitRounds(unit);
-  const st = Progress.unitStats(unit, subject);
   const weak = Progress.weakWords(subject, 0, unit);
 
   card.innerHTML =
     '<h2 class="report-name"></h2>' +
     '<div class="unit-pick" role="radiogroup"></div>' +
-    '<dl class="figures">' +
-    '<div><dd class="fig-acc"></dd><dt>richtig</dt></div>' +
-    '<div><dd class="fig-rounds"></dd><dt></dt></div>' +
-    '<div><dd class="fig-seat"></dd><dt>sitzen</dt></div>' +
-    "</dl>" +
+    '<div class="score"><span class="score-num"></span><span class="score-label">gelernt</span></div>' +
+    '<div class="score-bar"></div>' +
+    '<ul class="legend"></ul>' +
     '<div class="report-units"></div>' +
+    '<p class="report-rounds"></p>' +
     '<div class="report-weak"></div>';
   card.querySelector(".report-name").textContent = subject.name;
 
@@ -699,39 +742,51 @@ function subjectCard(subject) {
     pick.appendChild(b);
   });
 
-  card.querySelector(".fig-acc").textContent = pct(Progress.accuracy(subject, unit));
-  card.querySelector(".fig-rounds").textContent = rounds.length;
-  card.querySelector(".fig-rounds").nextElementSibling.textContent = rounds.length === 1 ? "Runde" : "Runden";
-  card.querySelector(".fig-seat").textContent = st.mastered + "/" + st.total;
+  card.querySelector(".score-num").textContent = Math.round(sum.score * 100) + "%";
+  card.querySelector(".score-bar").appendChild(segBar(sum));
+  const legend = card.querySelector(".legend");
+  SEG_ORDER.forEach((k) => {
+    const li = document.createElement("li");
+    li.dataset.s = k;
+    li.innerHTML = "<i></i><b></b><span></span>";
+    li.querySelector("b").textContent = sum.counts[k];
+    li.querySelector("span").textContent = STATE_NAMES[k];
+    legend.appendChild(li);
+  });
 
   // Die Teile (Objectifs) dieser Unit.
   const ul = card.querySelector(".report-units");
-  Progress.setStats(unit, subject).forEach((set) => {
+  Progress.setSummary(unit, subject).forEach((set) => {
     const row = document.createElement("div");
     row.className = "report-unit";
-    row.innerHTML = '<span class="ru-name"></span><span class="ru-count"></span><span class="rail"><i></i></span>';
+    row.innerHTML = '<span class="ru-name"></span><span class="ru-count"></span>';
     row.querySelector(".ru-name").textContent = set.name;
-    row.querySelector(".ru-count").textContent = set.mastered + " von " + set.total;
-    row.querySelector("i").style.setProperty("--p", set.mastered / set.total);
+    row.querySelector(".ru-count").textContent = percent(set);
+    row.appendChild(segBar(set));
     ul.appendChild(row);
   });
+
+  card.querySelector(".report-rounds").textContent =
+    rounds.length === 0
+      ? "Noch keine Runde zu Ende gebracht."
+      : rounds.length + (rounds.length === 1 ? " Runde" : " Runden") + " zu Ende gebracht.";
 
   const wk = card.querySelector(".report-weak");
   if (!weak.length) {
     wk.innerHTML = '<p class="weak-none"></p>';
-    wk.firstChild.textContent = rounds.length
-      ? "Nichts, was du oft falsch hast. Weiter so."
-      : "Mach eine Runde, dann zeigt dir das Profil hier deine schwersten Wörter.";
+    wk.firstChild.textContent = sum.counts.neu === sum.total
+      ? "Mach eine Runde, dann zeigt dir das Profil hier deine schwersten Wörter."
+      : "Nichts, was dir gerade schwerfällt. Weiter so.";
   } else {
     const h = document.createElement("h3");
     h.textContent = "Das fällt dir schwer";
     const list = document.createElement("ol");
     weak.slice(0, 6).forEach((w) => {
       const li = document.createElement("li");
-      li.innerHTML = '<span class="w-word"></span><span class="w-de"></span><span class="w-n"></span>';
+      li.dataset.s = w.state;
+      li.innerHTML = '<i></i><span class="w-word"></span><span class="w-de"></span>';
       li.querySelector(".w-word").textContent = w.entry[subject.sides[1].key];
       li.querySelector(".w-de").textContent = w.entry[subject.sides[0].key];
-      li.querySelector(".w-n").textContent = w.wrong + "× falsch";
       list.appendChild(li);
     });
     const go = document.createElement("button");
@@ -754,7 +809,8 @@ function startWeakSession(subject, unit) {
   startSession(
     weak.map((w) => w.entry),
     { sets: [], direction: "mixed", mode: "write", weakOf: unit.id },
-    (e) => unitOf.get(e)
+    (e) => unitOf.get(e),
+    "weak"
   );
 }
 
@@ -782,8 +838,39 @@ $("btn-start").addEventListener("click", () => {
   }
   $("start-hint").textContent = "";
   saveSettings(s);
-  startSession(current.unit.entries.filter((w) => s.sets.includes(setOf(w))), s);
+  const pool = current.unit.entries.filter((w) => s.sets.includes(setOf(w)));
+  withLoginNudge(() => startSession(pool, s));
 });
+
+// Ohne Konto wird nichts gespeichert: einmal pro Sitzung nachfragen, ob man sich anmelden will.
+const SKIP_KEY = "lb-skip-login";
+
+function withLoginNudge(start) {
+  let skipped = false;
+  try {
+    skipped = sessionStorage.getItem(SKIP_KEY) === "1";
+  } catch (e) {
+    /* egal */
+  }
+  if (Auth.current() || skipped || typeof $("login-nudge").showModal !== "function") return start();
+  const dialog = $("login-nudge");
+  dialog.addEventListener(
+    "close",
+    () => {
+      const v = dialog.returnValue;
+      if (v === "login" || v === "signup") return showAuth(v, true);
+      try {
+        sessionStorage.setItem(SKIP_KEY, "1");
+      } catch (e) {
+        /* egal */
+      }
+      if (v === "skip") start();
+    },
+    { once: true }
+  );
+  dialog.returnValue = "";
+  dialog.showModal();
+}
 
 $("write-form").addEventListener("submit", (e) => {
   e.preventDefault();

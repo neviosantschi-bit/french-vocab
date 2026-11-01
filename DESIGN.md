@@ -51,7 +51,14 @@ Beide werden über Fontsource mitgebündelt, keine Anfragen an Google.
 ## Konto und Profil
 
 - Startseite: Pille oben rechts ("Anmelden" oder der Benutzername). Angemeldet zeigen Bänder und
-  Unit-Zeilen eine dünne Schiene, wie viel schon sitzt (2 richtige in Folge).
-- Profil = Zeugnis: pro Fach ein Blatt in der Fachfarbe mit grossen Zahlen (richtig, Runden, sitzen),
-  Schiene pro Unit, "Das fällt dir schwer" und "Schwache Wörter üben". Darüber 14 Punkte für die letzten Tage.
-- Anmelden: eine Karte auf Papier, zwei Felder, kleiner Umschalter zu "Konto erstellen".
+  Unit-Zeilen einen Balken, wie gut die Wörter sitzen, plus "x% gelernt".
+- Jedes Wort hat einen Zustand aus seinen letzten Antworten (`public/progress.js`):
+  neu (leer), falsch (rot), wackelig (gelb), richtig (blau), sitzt (dunkelgrün).
+  "% gelernt" = Mittel der Wörter (neu 0, falsch 0, wackelig 0,35, richtig 0,7, sitzt 1).
+- Profil = Zeugnis: pro Fach ein Blatt in der Fachfarbe mit grosser Prozentzahl, Balken, Legende mit
+  Anzahl pro Zustand, Balken pro Objectif, fertige Runden, "Das fällt dir schwer" und "Schwache Wörter üben".
+  Darüber 14 Punkte für die letzten Tage. Gewählt wird die Unit; sie folgt der Unit, die man zuletzt übt.
+- Eine Runde zählt nur, wenn sie zu Ende gespielt wurde (keine Abbrüche, keine Wiederholungs- oder
+  Schwache-Wörter-Runden).
+- Anmelden: eine Karte auf Papier, zwei Felder, kleiner Umschalter zu "Konto erstellen". Wer ohne Konto
+  eine Runde startet, wird einmal pro Sitzung gefragt, ob er sich anmelden will.

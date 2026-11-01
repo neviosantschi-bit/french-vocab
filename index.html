@@ -177,6 +177,17 @@
   </div>
 </main>
 
+<!-- Hinweis, wenn man ohne Konto eine Runde startet -->
+<dialog id="login-nudge" class="nudge" aria-labelledby="nudge-title">
+  <form method="dialog">
+    <h2 id="nudge-title">Dein Lernstand wird nicht gespeichert</h2>
+    <p>Melde dich an, dann merkt sich die Seite jedes Wort, das du übst, und zeigt dir im Profil, wie gut du bist.</p>
+    <button value="login" class="go ink">Anmelden</button>
+    <button value="signup" class="go ghost">Konto erstellen</button>
+    <button value="skip" class="link">Ohne Konto üben</button>
+  </form>
+</dialog>
+
 <script src="/franzoesisch-unit-1.js"></script>
 <script src="/franzoesisch-unit-2.js"></script>
 <script src="/subjects.js"></script>
