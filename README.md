@@ -44,3 +44,10 @@ Output `dist`. Es ist keine weitere Konfiguration nötig.
 Fächer ohne Sprachpaar (Mathe, NT, RZG, Deutsch) nutzen die Felder `q`
 (Frage) und `a` (Antwort). Design und Logik bleiben dabei unberührt.
 # french-vocab
+
+## Units mit Downloads statt Karten
+
+In `public/subjects.js` kann eine Unit statt `entries` eine Liste `files` haben
+(`{ name, note, href }`, PDFs liegen in `public/downloads/`). Eine Unit ganz ohne
+Inhalt (z. B. die Englisch-Stufen A2, B1, B1+) zeigt "Noch leer" und zählt nicht
+als Unit.

@@ -37,15 +37,27 @@
 [data-subject="nt"]           { --c: #2d7656; --on: #ffffff; }
 [data-subject="rzg"]          { --c: #4f9a72; --on: #191c3d; }
 
-/* Dünne Linien auf der Fachfarbe: ein feines Rautengitter und zwei Ringe. */
-.band, body[data-subject] {
-  --line: color-mix(in srgb, var(--on) 13%, transparent);
-  background-color: var(--c);
-  background-image:
-    radial-gradient(circle at 90% 20%, transparent 0 119px, var(--line) 119px 120px, transparent 120px 179px, var(--line) 179px 180px, transparent 180px),
-    repeating-linear-gradient(45deg, transparent 0 55px, var(--line) 55px 56px),
-    repeating-linear-gradient(135deg, transparent 0 55px, var(--line) 55px 56px);
+/* Jedes Fach hat sein eigenes Linienmuster (public/patterns). Nur auf den
+   Fachseiten, nicht auf der Startseite. Die Linien nehmen die Schriftfarbe. */
+body[data-subject]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--on);
+  opacity: var(--pattern-opacity, 0.2);
+  -webkit-mask: var(--pattern) center / cover no-repeat;
+  mask: var(--pattern) center / cover no-repeat;
 }
+body[data-subject] .screen { position: relative; z-index: 1; }
+
+[data-subject="franzoesisch"] { --pattern: url("/patterns/franzoesisch.svg"); }
+[data-subject="englisch"]     { --pattern: url("/patterns/englisch.svg"); }
+[data-subject="deutsch"]      { --pattern: url("/patterns/deutsch.svg"); --pattern-opacity: 0.12; }
+[data-subject="mathematik"]   { --pattern: url("/patterns/mathematik.svg"); }
+[data-subject="nt"]           { --pattern: url("/patterns/nt.svg"); }
+[data-subject="rzg"]          { --pattern: url("/patterns/rzg.svg"); }
 
 /* ---------------- Base ---------------- */
 
@@ -63,7 +75,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
-body[data-subject] { color: var(--on); }
+body[data-subject] { background: var(--c); color: var(--on); }
 
 h1, p { margin: 0; }
 fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
@@ -139,6 +151,7 @@ button {
   padding: 0 var(--edge);
   border: 0;
   border-radius: 0;
+  background: var(--c);
   color: var(--on);
   text-align: left;
   overflow: hidden;
@@ -572,3 +585,8 @@ button {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------------- Dateien (Downloads) ---------------- */
+
+a.row { text-decoration: none; color: inherit; }
+.row-get { font-weight: 700; }

@@ -26,8 +26,9 @@ Jedes Fach ist ein farbiger Ordner, wie im Schulzimmer.
 | Natur und Technik | `#2d7656` | `#ffffff` |
 | RZG | `#4f9a72` | `#191c3d` |
 
-Auf jeder Fachfarbe liegen dünne Linien (1 px, 13 % der Schriftfarbe): ein Rautengitter
-und zwei Ringe. Sie stehen in `src/style.css` bei `--line`.
+Jedes Fach hat sein eigenes dünnes Linienmuster (SVG in `public/patterns/`, als Maske in der
+Schriftfarbe): Französisch Wellenringe, Englisch Wellen, Deutsch Schuppen, Mathe Ellipsen,
+NT Höhenlinien, RZG Spirale. Nur auf den Fachseiten, nicht auf der Startseite.
 
 Papier `#f4f5fa`, Tinte `#191c3d` (im Dunkelmodus vertauscht).
 Neues Fach: Farbe in `src/style.css` unter `[data-subject="…"]` eintragen.

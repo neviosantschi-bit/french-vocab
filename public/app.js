@@ -73,11 +73,15 @@ function unitSets(unit) {
   return out;
 }
 
+// Eine Unit zaehlt erst, wenn Karten oder Dateien drin sind.
+const hasContent = (unit) => (unit.entries || []).length > 0 || (unit.files || []).length > 0;
+
 function countLabel(n) {
   return n + (n === 1 ? " Eintrag" : " Einträge");
 }
 
-function unitsLabel(n) {
+function unitsLabel(subject) {
+  const n = subject.units.filter(hasContent).length;
   return n ? n + (n === 1 ? " Unit" : " Units") : "Noch leer";
 }
 
@@ -96,15 +100,15 @@ function showHome() {
   box.innerHTML = "";
   SUBJECTS.forEach((subject) => {
     const b = document.createElement("button");
-    b.className = "band" + (subject.units.length ? "" : " is-empty");
+    b.className = "band" + (subject.units.some(hasContent) ? "" : " is-empty");
     b.dataset.subject = subject.id;
     b.innerHTML =
       '<span class="band-name"></span>' +
       '<span class="band-meta"><span class="band-count"></span><span class="band-full"></span></span>';
     b.querySelector(".band-name").textContent = subject.short || subject.name;
-    b.querySelector(".band-count").textContent = unitsLabel(subject.units.length);
+    b.querySelector(".band-count").textContent = unitsLabel(subject);
     if (subject.short) b.querySelector(".band-full").textContent = subject.name;
-    b.setAttribute("aria-label", subject.name + ", " + unitsLabel(subject.units.length));
+    b.setAttribute("aria-label", subject.name + ", " + unitsLabel(subject));
     b.addEventListener("click", () => openSubject(b, subject));
     box.appendChild(b);
   });
@@ -122,6 +126,12 @@ function openSubject(band, subject) {
   setTimeout(() => showUnits(subject), 480);
 }
 
+function unitCount(unit) {
+  if (unit.entries && unit.entries.length) return countLabel(unit.entries.length);
+  const n = (unit.files || []).length;
+  return n ? n + (n === 1 ? " Datei" : " Dateien") : "Noch leer";
+}
+
 function showUnits(subject) {
   current = { subject: subject, unit: null, sets: [] };
   $("unit-title").textContent = subject.name;
@@ -132,8 +142,8 @@ function showUnits(subject) {
     b.className = "row";
     b.innerHTML = '<span class="row-name"></span><span class="row-count"></span>';
     b.querySelector(".row-name").textContent = unit.name;
-    b.querySelector(".row-count").textContent = countLabel(unit.entries.length);
-    b.addEventListener("click", () => showSetup(unit));
+    b.querySelector(".row-count").textContent = unitCount(unit);
+    b.addEventListener("click", () => (unit.entries && unit.entries.length ? showSetup(unit) : showFiles(unit)));
     box.appendChild(b);
   });
   box.classList.toggle("hidden", !subject.units.length);
@@ -142,6 +152,31 @@ function showUnits(subject) {
   $("unit-empty").classList.toggle("hidden", subject.units.length > 0);
   paint(subject);
   showScreen("unit");
+}
+
+// Unit ohne Karten: Liste zum Herunterladen, oder "Noch leer".
+function showFiles(unit) {
+  const subject = current.subject;
+  current = { subject: subject, unit: unit, sets: [] };
+  $("files-back").textContent = subject.name;
+  $("files-title").textContent = unit.name;
+  const box = $("files-list");
+  box.innerHTML = "";
+  (unit.files || []).forEach((f) => {
+    const a = document.createElement("a");
+    a.className = "row";
+    a.href = f.href;
+    a.download = "";
+    a.innerHTML = '<span class="row-name"></span><span class="row-count row-get"></span>';
+    a.querySelector(".row-name").textContent = f.name;
+    a.querySelector(".row-count").textContent = (f.note ? f.note + " · " : "") + "Herunterladen";
+    box.appendChild(a);
+  });
+  const empty = !(unit.files || []).length;
+  box.classList.toggle("hidden", empty);
+  $("files-empty").classList.toggle("hidden", !empty);
+  paint(subject);
+  showScreen("files");
 }
 
 function showSetup(unit) {
@@ -250,7 +285,7 @@ function applySettings(s) {
 let session = null;
 
 function showScreen(name) {
-  ["home", "unit", "start", "quiz", "end"].forEach((n) => {
+  ["home", "unit", "files", "start", "quiz", "end"].forEach((n) => {
     $("screen-" + n).classList.toggle("hidden", n !== name);
   });
   window.scrollTo(0, 0);

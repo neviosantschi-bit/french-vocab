@@ -7,6 +7,9 @@
 // units = Units (Prüfungsstoff) des Fachs. Jede Unit hat eine Liste von
 //         Einträgen; das Feld "set" teilt eine Unit in Teile (z. B. Objectif 1).
 //
+// files = Unit ohne Karten, nur Downloads: [{ name, note, href }] (PDFs in public/downloads).
+//         Eine Unit ohne Karten und ohne Dateien zeigt "Noch leer" und zählt nicht.
+//
 // Neue Unit: eigene Datei in public/ anlegen, in index.html vor subjects.js
 // laden und hier unter "units" eintragen.
 
@@ -24,13 +27,28 @@ const SUBJECTS = [
     id: "englisch",
     name: "Englisch",
     sides: [{ key: "de", name: "Deutsch" }, { key: "en", name: "Englisch" }],
-    units: [],
+    // Stufen: noch ohne Inhalt, zählen deshalb nicht als Unit (Fach zeigt "Noch leer").
+    units: [
+      { id: "en-a2", name: "A2", entries: [] },
+      { id: "en-b1", name: "B1", entries: [] },
+      { id: "en-b1plus", name: "B1+", entries: [] },
+    ],
   },
   {
     id: "deutsch",
     name: "Deutsch",
     sides: [{ key: "q", name: "Frage" }, { key: "a", name: "Antwort" }],
-    units: [],
+    units: [
+      {
+        id: "de-satzglieder",
+        name: "Satzglieder",
+        files: [
+          { name: "Übung", note: "4 Seiten", href: "/downloads/Satzglieder_Uebung.pdf" },
+          { name: "Lösung", note: "4 Seiten", href: "/downloads/Satzglieder_Loesung.pdf" },
+          { name: "Satzglieder erweitern", note: "2 Seiten", href: "/downloads/Satzglieder_erweitern.pdf" },
+        ],
+      },
+    ],
   },
   {
     id: "mathematik",
