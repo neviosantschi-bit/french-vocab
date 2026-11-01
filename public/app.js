@@ -794,10 +794,9 @@ $("write-form").addEventListener("submit", (e) => {
 });
 
 $("btn-reveal").addEventListener("click", () => {
-  $("prompt").textContent =
-    currentEntry()[session.promptLang] +
-    "  →  " +
-    currentEntry()[session.lang];
+  // Gross steht nur die Loesung, die Frage rutscht klein nach oben.
+  $("prompt-lang").textContent = currentEntry()[session.promptLang];
+  $("prompt").textContent = currentEntry()[session.lang];
   $("btn-reveal").classList.add("hidden");
   $("reveal-knew").classList.remove("hidden");
 });
