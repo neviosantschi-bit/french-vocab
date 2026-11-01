@@ -19,12 +19,12 @@ Jedes Fach ist ein farbiger Ordner, wie im Schulzimmer.
 
 | Fach | Ordner `--c` | Schrift `--on` |
 | --- | --- | --- |
-| Französisch | `#2b4fe0` | `#ffffff` |
-| Mathematik | `#c93424` | `#ffffff` |
+| Französisch | `#f08a3c` | `#191c3d` |
+| Mathematik | `#2b4fe0` | `#ffffff` |
 | Deutsch | `#f4c431` | `#191c3d` |
-| Englisch | `#7445d9` | `#ffffff` |
+| Englisch | `#c93424` | `#ffffff` |
 | Natur und Technik | `#127a48` | `#ffffff` |
-| RZG | `#f08a3c` | `#191c3d` |
+| RZG | `#2f9a62` | `#191c3d` |
 
 Papier `#f4f5fa`, Tinte `#191c3d` (im Dunkelmodus vertauscht).
 Neues Fach: Farbe in `src/style.css` unter `[data-subject="…"]` eintragen.

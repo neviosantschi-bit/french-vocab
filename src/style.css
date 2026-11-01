@@ -30,12 +30,12 @@
   }
 }
 
-[data-subject="franzoesisch"] { --c: #2b4fe0; --on: #ffffff; }
-[data-subject="mathematik"]   { --c: #c93424; --on: #ffffff; }
+[data-subject="franzoesisch"] { --c: #f08a3c; --on: #191c3d; }
+[data-subject="mathematik"]   { --c: #2b4fe0; --on: #ffffff; }
 [data-subject="deutsch"]      { --c: #f4c431; --on: #191c3d; }
-[data-subject="englisch"]     { --c: #7445d9; --on: #ffffff; }
+[data-subject="englisch"]     { --c: #c93424; --on: #ffffff; }
 [data-subject="nt"]           { --c: #127a48; --on: #ffffff; }
-[data-subject="rzg"]          { --c: #f08a3c; --on: #191c3d; }
+[data-subject="rzg"]          { --c: #2f9a62; --on: #191c3d; }
 
 /* ---------------- Base ---------------- */
 
