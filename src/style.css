@@ -30,12 +30,22 @@
   }
 }
 
-[data-subject="franzoesisch"] { --c: #f08a3c; --on: #191c3d; }
-[data-subject="mathematik"]   { --c: #2b4fe0; --on: #ffffff; }
-[data-subject="deutsch"]      { --c: #f4c431; --on: #191c3d; }
-[data-subject="englisch"]     { --c: #c93424; --on: #ffffff; }
-[data-subject="nt"]           { --c: #127a48; --on: #ffffff; }
-[data-subject="rzg"]          { --c: #2f9a62; --on: #191c3d; }
+[data-subject="franzoesisch"] { --c: #dd8a4a; --on: #191c3d; }
+[data-subject="englisch"]     { --c: #b8493c; --on: #ffffff; }
+[data-subject="deutsch"]      { --c: #ecc654; --on: #191c3d; }
+[data-subject="mathematik"]   { --c: #3d56b0; --on: #ffffff; }
+[data-subject="nt"]           { --c: #2d7656; --on: #ffffff; }
+[data-subject="rzg"]          { --c: #4f9a72; --on: #191c3d; }
+
+/* Dünne Linien auf der Fachfarbe: ein feines Rautengitter und zwei Ringe. */
+.band, body[data-subject] {
+  --line: color-mix(in srgb, var(--on) 13%, transparent);
+  background-color: var(--c);
+  background-image:
+    radial-gradient(circle at 90% 20%, transparent 0 119px, var(--line) 119px 120px, transparent 120px 179px, var(--line) 179px 180px, transparent 180px),
+    repeating-linear-gradient(45deg, transparent 0 55px, var(--line) 55px 56px),
+    repeating-linear-gradient(135deg, transparent 0 55px, var(--line) 55px 56px);
+}
 
 /* ---------------- Base ---------------- */
 
@@ -53,7 +63,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
-body[data-subject] { background: var(--c); color: var(--on); }
+body[data-subject] { color: var(--on); }
 
 h1, p { margin: 0; }
 fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
@@ -129,7 +139,6 @@ button {
   padding: 0 var(--edge);
   border: 0;
   border-radius: 0;
-  background: var(--c);
   color: var(--on);
   text-align: left;
   overflow: hidden;

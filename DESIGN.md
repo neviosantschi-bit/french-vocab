@@ -19,12 +19,15 @@ Jedes Fach ist ein farbiger Ordner, wie im Schulzimmer.
 
 | Fach | Ordner `--c` | Schrift `--on` |
 | --- | --- | --- |
-| Französisch | `#f08a3c` | `#191c3d` |
-| Mathematik | `#2b4fe0` | `#ffffff` |
-| Deutsch | `#f4c431` | `#191c3d` |
-| Englisch | `#c93424` | `#ffffff` |
-| Natur und Technik | `#127a48` | `#ffffff` |
-| RZG | `#2f9a62` | `#191c3d` |
+| Französisch | `#dd8a4a` | `#191c3d` |
+| Englisch | `#b8493c` | `#ffffff` |
+| Deutsch | `#ecc654` | `#191c3d` |
+| Mathematik | `#3d56b0` | `#ffffff` |
+| Natur und Technik | `#2d7656` | `#ffffff` |
+| RZG | `#4f9a72` | `#191c3d` |
+
+Auf jeder Fachfarbe liegen dünne Linien (1 px, 13 % der Schriftfarbe): ein Rautengitter
+und zwei Ringe. Sie stehen in `src/style.css` bei `--line`.
 
 Papier `#f4f5fa`, Tinte `#191c3d` (im Dunkelmodus vertauscht).
 Neues Fach: Farbe in `src/style.css` unter `[data-subject="…"]` eintragen.

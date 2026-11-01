@@ -21,9 +21,9 @@ const SUBJECTS = [
     ],
   },
   {
-    id: "mathematik",
-    name: "Mathematik",
-    sides: [{ key: "q", name: "Frage" }, { key: "a", name: "Antwort" }],
+    id: "englisch",
+    name: "Englisch",
+    sides: [{ key: "de", name: "Deutsch" }, { key: "en", name: "Englisch" }],
     units: [],
   },
   {
@@ -33,9 +33,9 @@ const SUBJECTS = [
     units: [],
   },
   {
-    id: "englisch",
-    name: "Englisch",
-    sides: [{ key: "de", name: "Deutsch" }, { key: "en", name: "Englisch" }],
+    id: "mathematik",
+    name: "Mathematik",
+    sides: [{ key: "q", name: "Frage" }, { key: "a", name: "Antwort" }],
     units: [],
   },
   {
