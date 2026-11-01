@@ -28,7 +28,8 @@ Output `dist`. Es ist keine weitere Konfiguration nötig.
   plus der Direction-Contract.
 - `src/style.css` — das gesamte visuelle System (Farbordner, siehe `DESIGN.md`).
 - `public/subjects.js` — alle Fächer und ihre Units. Nur Daten.
-- `public/franzoesisch-unit-1.js` — die 103 Französisch-Vokabeln (Unit …).
+- `public/franzoesisch-unit-1.js` — die 103 Französisch-Vokabeln (Unit 1).
+- `public/franzoesisch-unit-2.js` — die Französisch-Vokabeln von Unit 2.
 - `public/app.js` — die gesamte Logik: Auswahl, Bewertung, Wiedervorlage,
   Auswertung. Wird bewusst als klassisches Skript geladen und nicht gebündelt.
 

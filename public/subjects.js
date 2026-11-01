@@ -16,7 +16,8 @@ const SUBJECTS = [
     name: "Französisch",
     sides: [{ key: "de", name: "Deutsch" }, { key: "fr", name: "Französisch" }],
     units: [
-      { id: "fr-1", name: "Unit …", entries: FRANZOESISCH_UNIT_1 },
+      { id: "fr-1", name: "Unit 1", entries: FRANZOESISCH_UNIT_1 },
+      { id: "fr-2", name: "Unit 2", entries: FRANZOESISCH_UNIT_2 },
     ],
   },
   {

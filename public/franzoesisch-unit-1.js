@@ -1,4 +1,4 @@
-// Französisch, Unit … — abgetippt aus den Fotos der Vokabelliste.
+// Französisch, Unit 1 — abgetippt aus den Fotos der Vokabelliste.
 // fr / de = die zwei Spalten, example = Beispielsatz aus der dritten Spalte.
 // accept = zusaetzlich erlaubte Schreibweisen (z. B. weibliche Form bei "/e").
 
