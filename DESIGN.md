@@ -69,3 +69,16 @@ Beide werden über Fontsource mitgebündelt, keine Anfragen an Google.
   Schwache-Wörter-Runden).
 - Anmelden: eine Karte auf Papier, zwei Felder, kleiner Umschalter zu "Konto erstellen". Wer ohne Konto
   eine Runde startet, wird einmal pro Sitzung gefragt, ob er sich anmelden will.
+
+## Bewegung
+
+- Alles Sanfte ist CSS: Bildschirme gleiten herein, Titel schieben sich von unten ins Bild,
+  Zeilen und Karten kommen gestaffelt, die Ordner schieben sich in die Schublade, die Zahlen im
+  Ergebnis poppen auf. Knöpfe federn beim Hover (`--spring`) und drücken sich knackig ein.
+- `public/fx.js` macht den Rest und ist nur Darstellung:
+  Knöpfe rücken höchstens 7 px zum Zeiger, die Buchstaben von "Lernblatt" heben sich wie eine
+  Welle unter dem Zeiger, eine kleine Karte folgt dem Zeiger über Ordnern (Name, Zähler, % gelernt)
+  und Unit-Zeilen (ein zufälliges Wort als Vorschau), und die Quizkarte neigt sich bis 4° zum Zeiger.
+- Eine einzige Animationsschleife, die schläft, wenn nichts mehr in Bewegung ist.
+  Aus bei "weniger Bewegung" und auf Touchgeräten.
+- Tab-Symbol: eine weisse Karteikarte auf Marineblau, nur zwei flache Farben.

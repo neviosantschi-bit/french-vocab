@@ -39,6 +39,7 @@
   --st-sitzt: #167a3f;
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --edge: clamp(18px, 5vw, 64px);
   --measure: 1120px;
   --tab-h: 26px;
@@ -86,6 +87,7 @@ body[data-subject] .screen { position: relative; z-index: 1; }
 *, *::before, *::after { box-sizing: border-box; }
 
 html {
+  scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
   scrollbar-color: color-mix(in srgb, currentColor 40%, transparent) transparent;
   scrollbar-width: thin;
@@ -437,7 +439,6 @@ input { caret-color: currentColor; }
   transition: font-stretch 300ms var(--ease), transform 120ms var(--ease), background 160ms var(--ease);
 }
 .go:hover { font-stretch: 150%; }
-.go:active { transform: scale(0.985); }
 .go:disabled { opacity: 0.4; cursor: default; font-stretch: 125%; }
 .go.ghost { background: transparent; color: var(--on); }
 .go.ink { background: var(--ink); border-color: var(--ink); color: var(--paper); }
@@ -926,4 +927,121 @@ input { caret-color: currentColor; }
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* =====================================================================
+   Bewegung: sanfte Auftritte und Knoepfe, die sich gut anfuehlen.
+   Ruecken zum Zeiger, Wellen in der Wortmarke und die Karte am Zeiger kommen aus fx.js.
+   ===================================================================== */
+
+/* Knoepfe: federnd beim Hover, knackig beim Druecken. Einzelne Eigenschaften (scale, translate),
+   damit sie sich mit dem Ruecken aus fx.js und mit transform vertragen. */
+.go, .pill, .account, .choice, .unit-chip, .chip { transition-property: scale, background, color, border-color, box-shadow, font-stretch, opacity, transform; }
+.go, .pill, .account, .unit-chip { transition-duration: 320ms; transition-timing-function: var(--spring); }
+.chip { transition: scale 320ms var(--spring); }
+.go:hover, .pill:hover, .account:hover, .unit-chip:hover, .chip:hover { scale: 1.035; }
+.choice:hover:not(:disabled) { scale: 1.015; }
+.go:active, .pill:active, .account:active, .unit-chip:active, .chip:active, .choice:active:not(:disabled) {
+  scale: 0.96;
+  transition-duration: 90ms;
+  transition-timing-function: var(--ease);
+}
+.go:disabled:hover { scale: 1; }
+
+/* Ausgewaehlte Chips federn kurz auf. */
+.chip input:checked + span { animation: pop 420ms var(--spring); }
+@keyframes pop { 0% { scale: 0.88; } 100% { scale: 1; } }
+
+/* Bildschirmwechsel: Fach-Seiten gleiten sanft herein. Die Animation startet jedes Mal neu,
+   wenn ein Bildschirm von display:none sichtbar wird. */
+@media (prefers-reduced-motion: no-preference) {
+  .screen:not(.home) { animation: screen-in 560ms var(--ease) backwards; }
+  @keyframes screen-in { from { opacity: 0; transform: translateY(16px); } }
+
+  .room-title { animation: title-in 760ms var(--ease) 70ms backwards; }
+  @keyframes title-in { from { clip-path: inset(0 0 100% 0); transform: translateY(30px); } }
+  .room-lede { animation: rise 620ms var(--ease) 180ms backwards; }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(20px); } }
+
+  .row, .report, .setup .group, .hint, .empty, .tally, .end-actions { animation: rise 620ms var(--ease) backwards; }
+  .row:nth-child(1), .report:nth-child(1), .setup .group:nth-child(1) { animation-delay: 140ms; }
+  .row:nth-child(2), .report:nth-child(2), .setup .group:nth-child(2) { animation-delay: 200ms; }
+  .row:nth-child(3), .report:nth-child(3), .setup .group:nth-child(3) { animation-delay: 260ms; }
+  .row:nth-child(4), .setup .group:nth-child(4) { animation-delay: 320ms; }
+  .row:nth-child(n+5) { animation-delay: 380ms; }
+  .empty, .tally { animation-delay: 160ms; }
+  .end-actions { animation-delay: 300ms; }
+
+  /* Startseite: die Ordner schieben sich nacheinander in die Schublade. */
+  .band { animation: drawer-in 780ms var(--ease) backwards; }
+  @keyframes drawer-in { from { opacity: 0; transform: translateY(70px); } }
+  .band:nth-child(2) { animation-delay: 70ms; }
+  .band:nth-child(3) { animation-delay: 140ms; }
+  .band:nth-child(4) { animation-delay: 210ms; }
+  .band:nth-child(5) { animation-delay: 280ms; }
+  .band:nth-child(n+6) { animation-delay: 350ms; }
+  .masthead { animation: rise 700ms var(--ease) backwards; }
+
+  /* Ende: die Zahlen im Ergebnis poppen nacheinander auf. */
+  .tally b { display: inline-block; animation: num-pop 560ms var(--spring) backwards; }
+  .tally b:nth-of-type(1) { animation-delay: 320ms; }
+  .tally b:nth-of-type(2) { animation-delay: 410ms; }
+  .tally b:nth-of-type(3) { animation-delay: 500ms; }
+  .tally b:nth-of-type(4) { animation-delay: 590ms; }
+  .tally b:nth-of-type(n+5) { animation-delay: 680ms; }
+  @keyframes num-pop { from { opacity: 0; scale: 0.4; translate: 0 0.4em; } }
+}
+
+/* Wortmarke: jeder Buchstabe lebt fuer sich (fx.js hebt sie beim Drueberfahren). */
+.wm-ch { display: inline-block; will-change: transform; }
+
+/* Die Karte am Zeiger (fx.js). */
+.cursor-card {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms var(--ease);
+  will-change: transform, opacity;
+}
+.cursor-card.is-on { opacity: 1; }
+.cc {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  min-width: 150px;
+  max-width: 260px;
+  padding: 12px 18px 13px 26px;
+  border-radius: 14px 16px 16px 14px;
+  background-color: var(--sheet);
+  background-image: linear-gradient(90deg, transparent 17px, var(--margin) 17px 18.5px, transparent 18.5px);
+  color: var(--sheet-ink);
+  box-shadow: var(--sheet-shadow);
+  transform-origin: 0 0;
+  scale: 0.55;
+  transition: scale 420ms var(--spring);
+}
+.cursor-card.is-on .cc { scale: 1; }
+/* Reiter in der Fachfarbe, wie bei den Ordnern. */
+.cc::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 28px;
+  width: 52px;
+  height: 9px;
+  border-radius: 6px 6px 0 0;
+  background: var(--tab, var(--sheet-ink));
+}
+.cc.pop { animation: pop 380ms var(--spring); }
+.cc-title { font-family: var(--display); font-size: 1.05rem; font-weight: 800; font-stretch: 112%; line-height: 1.1; }
+.cc-line { font-size: 0.875rem; color: var(--sheet-soft); line-height: 1.3; }
+.cc-line2 { font-weight: 700; color: var(--sheet-ink); }
+.cc [hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
