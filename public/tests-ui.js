@@ -35,7 +35,11 @@
     } else if (Tests.status === "error" && !Tests.all().length) {
       lede.textContent = "Die Tests konnten nicht geladen werden. Prüfe dein Internet und öffne die Seite nochmal.";
     } else if (t) {
-      lede.textContent = "Nächster Test: " + Tests.label(t) + " (" + Tests.countdown(t.test_date) + ")";
+      const group = Tests.nextGroup();
+      lede.textContent =
+        group.length > 1
+          ? "Nächste Tests: " + group.map((x) => x.title).join(", ") + ", " + Tests.short(t.test_date) + " (" + Tests.countdown(t.test_date) + ")"
+          : "Nächster Test: " + Tests.label(t) + " (" + Tests.countdown(t.test_date) + ")";
     } else {
       lede.textContent = "Noch kein Test eingetragen. Trag den nächsten ein, dann sehen ihn alle.";
     }
@@ -338,37 +342,66 @@
     return b;
   }
 
+  // Ein Test: "Nächster Test: Titel, Mi 4.11. (in 3 Tagen)".
+  // Mehrere am selben Tag: "Nächste Tests, Mi 4.11. (in 3 Tagen)" und darunter alle, kleiner.
+  function nextHint(group) {
+    const first = group[0];
+    if (group.length === 1) {
+      return nextButton(first, "Nächster Test: " + Tests.label(first) + " (" + Tests.countdown(first.test_date) + ")");
+    }
+    const box = document.createElement("div");
+    box.className = "next-tests";
+    const head = document.createElement("span");
+    head.className = "nt-head";
+    head.textContent = "Nächste Tests, " + Tests.short(first.test_date) + " (" + Tests.countdown(first.test_date) + ")";
+    box.appendChild(head);
+    const list = document.createElement("span");
+    list.className = "nt-list";
+    group.forEach((t) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "nt-item";
+      b.dataset.subject = t.subject_id;
+      b.innerHTML = "<i></i><span></span>";
+      b.querySelector("span").textContent = t.title;
+      b.addEventListener("click", () => openDetail(t.id));
+      list.appendChild(b);
+    });
+    box.appendChild(list);
+    return box;
+  }
+
   // Neben "Lernblatt" und auf jeder Fachseite.
   window.refreshTestHints = function refreshTestHints() {
     const note = $("masthead-note");
     if (note) {
-      const t = Tests.next();
-      note.classList.toggle("has-test", Boolean(t));
+      const group = Tests.nextGroup();
+      note.classList.toggle("has-test", group.length > 0);
       note.textContent = "";
-      if (t) {
-        note.appendChild(nextButton(t, "Nächster Test: " + Tests.label(t) + " (" + Tests.countdown(t.test_date) + ")"));
-      } else {
-        note.textContent = "Welches Fach übst du heute?";
-      }
+      if (group.length) note.appendChild(nextHint(group));
+      else note.textContent = "Welches Fach übst du heute?";
     }
     const unitNext = $("unit-next");
     if (unitNext) {
       unitNext.innerHTML = "";
       const subject = current && current.subject;
-      const t = subject ? Tests.next(subject.id) : null;
-      if (t) {
-        unitNext.appendChild(
-          nextButton(t, "Nächster Test in " + subject.name + ": " + t.title + ", " + Tests.short(t.test_date) + " (" + Tests.countdown(t.test_date) + ")")
-        );
-      }
-      unitNext.classList.toggle("hidden", !t);
+      const group = subject ? Tests.nextGroup(subject.id) : [];
+      if (group.length) unitNext.appendChild(nextHint(group));
+      unitNext.classList.toggle("hidden", !group.length);
+    }
+    // Zahl am Tests-Knopf: so viele Tests stehen an.
+    const n = Tests.upcoming().length;
+    const badge = $("tests-count");
+    if (badge) {
+      badge.textContent = n;
+      badge.hidden = !n;
     }
   };
 
   window.addEventListener("lb:tests", () => {
     refreshTestHints();
-    const count = document.querySelector(".band-tests .band-count");
-    if (count) count.textContent = Tests.countLabel();
     if (!$("screen-tests").classList.contains("hidden")) renderTests();
   });
+
+  $("btn-tests").addEventListener("click", showTests);
 })();

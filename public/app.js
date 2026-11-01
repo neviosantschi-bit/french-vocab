@@ -119,7 +119,6 @@ function showHome() {
   const box = $("subject-list");
   box.classList.remove("opening");
   box.innerHTML = "";
-  box.appendChild(testsBand());
   SUBJECTS.forEach((subject) => {
     const b = document.createElement("button");
     b.className = "band" + (subject.units.some(hasContent) ? "" : " is-empty");
@@ -140,29 +139,6 @@ function showHome() {
   renderAccountButton();
   showScreen("home");
   if (typeof refreshTestHints === "function") refreshTestHints();
-}
-
-// Der Ordner "Tests" liegt zuoberst in der Schublade und oeffnet den Kalender.
-function testsBand() {
-  const b = document.createElement("button");
-  b.className = "band band-tests";
-  b.dataset.subject = "tests";
-  b.innerHTML =
-    '<span class="band-name">Tests</span>' +
-    '<span class="band-meta"><span class="band-count"></span><span class="band-full"></span></span>';
-  b.querySelector(".band-count").textContent = Tests.countLabel();
-  b.setAttribute("aria-label", "Tests, " + Tests.countLabel());
-  b.addEventListener("click", () => openTests(b));
-  return b;
-}
-
-function openTests(band) {
-  const box = $("subject-list");
-  if (box.classList.contains("opening")) return;
-  if (reducedMotion()) return showTests();
-  band.classList.add("is-open");
-  box.classList.add("opening");
-  setTimeout(showTests, 480);
 }
 
 // Kleine Anzeige im Band: wie gut die Karten des Fachs sitzen (nur angemeldet).

@@ -132,12 +132,10 @@
   function describe(t) {
     if (t.classList.contains("band")) {
       const meter = t.querySelector(".band-meter > span:not(.seg)");
-      // Der Tests-Ordner zeigt statt der Prozentzahl den naechsten Test.
-      const nt = t.classList.contains("band-tests") && typeof Tests !== "undefined" ? Tests.next() : null;
       return [
         t.querySelector(".band-name").textContent,
         (t.querySelector(".band-count") || {}).textContent || "",
-        nt ? nt.title + ", " + Tests.short(nt.test_date) : meter ? meter.textContent : "",
+        meter ? meter.textContent : "",
         getComputedStyle(t).backgroundColor,
       ];
     }

@@ -74,6 +74,12 @@ const Tests = (() => {
   const upcoming = (subjectId) => all().filter((t) => t.test_date >= today() && (!subjectId || t.subject_id === subjectId));
   const next = (subjectId) => upcoming(subjectId)[0] || null;
 
+  // Alle anstehenden Tests am naechsten Testtag (mit subjectId nur dieses Faches).
+  function nextGroup(subjectId) {
+    const first = next(subjectId);
+    return first ? upcoming(subjectId).filter((t) => t.test_date === first.test_date) : [];
+  }
+
   const subjectOf = (t) => (typeof SUBJECTS !== "undefined" ? SUBJECTS.find((s) => s.id === t.subject_id) : null);
   const subjectName = (t) => (subjectOf(t) ? subjectOf(t).name : t.subject_id);
 
@@ -84,8 +90,8 @@ const Tests = (() => {
     return (t.unit_ids || []).map((id) => (subject.units.find((u) => u.id === id) || {}).name).filter(Boolean);
   }
 
-  // "Französisch: Wortschatztest, Fr 14.11."
-  const label = (t) => subjectName(t) + ": " + t.title + ", " + short(t.test_date);
+  // "Wortschatztest, Fr 14.11." (das Fach steht meist schon im Namen)
+  const label = (t) => t.title + ", " + short(t.test_date);
 
   function countLabel() {
     if (status === "off") return "Bald";
@@ -145,7 +151,7 @@ const Tests = (() => {
     MONTHS, WEEKDAYS,
     get status() { return status; },
     dayStr, parse, today, daysUntil, short, countdown, monthGrid,
-    all, get, onDay, inMonth, upcoming, next,
+    all, get, onDay, inMonth, upcoming, next, nextGroup,
     subjectName, unitNames, label, countLabel,
     load, add, update, remove,
   };

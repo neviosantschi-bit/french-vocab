@@ -168,7 +168,8 @@ input { caret-color: currentColor; }
   letter-spacing: -0.01em;
 }
 
-.masthead-note { margin: 0 auto 0 8px; color: var(--ink-soft); }
+.masthead-note { margin: 0 0 0 8px; color: var(--ink-soft); }
+.masthead-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
 
 .account {
   min-height: 40px;
@@ -906,7 +907,6 @@ input { caret-color: currentColor; }
 /* ---------------- Klein ---------------- */
 
 @media (max-width: 600px) {
-  .masthead .account { margin-left: auto; }
   .band-full, .band-meter { display: none; }
   .band-name { font-size: clamp(1.5rem, min(5.6vh, 7.4vw), 3.2rem); }
   .band { --tab-w: 27%; }
@@ -1216,3 +1216,49 @@ input { caret-color: currentColor; }
   .tr-when { grid-column: 2 / -1; text-align: left; }
   .test-row { grid-template-columns: auto 1fr; }
 }
+
+/* Tests-Knopf neben dem Profil */
+.tests-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.8125rem;
+  line-height: 1;
+  transition: background 160ms var(--ease), color 160ms var(--ease);
+}
+.tests-count[hidden] { display: none; }
+.tests-btn:hover .tests-count { background: var(--paper); color: var(--ink); }
+
+/* Mehrere Tests am selben Tag: alle, etwas kleiner */
+.next-tests { display: grid; gap: 6px; justify-items: start; max-width: 100%; }
+.nt-head { font-weight: 700; font-size: 0.875rem; color: var(--ink); }
+.nt-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.nt-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 12px 3px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  transition: background 200ms var(--ease), scale 320ms var(--spring);
+}
+.nt-item:hover { background: color-mix(in srgb, var(--ink) 18%, transparent); scale: 1.04; }
+.nt-item i { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.5px var(--paper); }
+.nt-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.next-test-wrap .nt-head { color: var(--sheet-ink); }
+.next-test-wrap .next-tests { padding: 10px 14px; border-radius: 18px; background: var(--sheet); box-shadow: 0 10px 22px -14px rgba(10, 12, 40, 0.6); }
+.next-test-wrap .nt-item { background: color-mix(in srgb, var(--sheet-ink) 8%, transparent); color: var(--sheet-ink); }
+.next-test-wrap .nt-item:hover { background: color-mix(in srgb, var(--sheet-ink) 15%, transparent); }
+.next-test-wrap .nt-item i { box-shadow: 0 0 0 1.5px var(--sheet); }
