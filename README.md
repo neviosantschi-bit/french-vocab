@@ -1,7 +1,8 @@
 # Lernblatt
 
-Lerntrainer für die ganze Klasse: Fach wählen, Unit wählen, üben. Kein Backend, kein Konto — Einstellungen liegen
-im `localStorage` des Geräts.
+Lerntrainer für die ganze Klasse: Fach wählen, Unit wählen, üben. Kein Backend — Konto (Benutzername + Passwort),
+Lernstand, Einstellungen und der letzte Bildschirm liegen im `localStorage` des Geräts. Löscht man die Browserdaten,
+ist das Konto weg.
 
 ## Lokal starten
 
@@ -30,6 +31,8 @@ Output `dist`. Es ist keine weitere Konfiguration nötig.
 - `public/subjects.js` — alle Fächer und ihre Units. Nur Daten.
 - `public/franzoesisch-unit-1.js` — die 103 Französisch-Vokabeln (Unit 1).
 - `public/franzoesisch-unit-2.js` — die Französisch-Vokabeln von Unit 2.
+- `public/auth.js` — Konto nur auf diesem Gerät (Anmelden, Registrieren, Hash mit Salz).
+- `public/progress.js` — Lernstand pro Benutzer: Wörter, Runden, Tage in Folge, schwache Wörter.
 - `public/app.js` — die gesamte Logik: Auswahl, Bewertung, Wiedervorlage,
   Auswertung. Wird bewusst als klassisches Skript geladen und nicht gebündelt.
 

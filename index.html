@@ -24,8 +24,44 @@
   <header class="masthead">
     <p class="wordmark">Lernblatt</p>
     <p class="masthead-note">Welches Fach übst du heute?</p>
+    <button id="btn-account" class="account">Anmelden</button>
   </header>
   <nav id="subject-list" class="bands" aria-label="Fächer"></nav>
+</main>
+
+<!-- ---------- Anmelden / Konto erstellen ---------- -->
+<main id="screen-auth" class="screen auth hidden">
+  <form id="auth-form" class="auth-card" autocomplete="on">
+    <button type="button" id="auth-back" class="pill back">Alle Fächer</button>
+    <h1 id="auth-title" class="auth-title">Anmelden</h1>
+    <label class="field">
+      <span>Benutzername</span>
+      <input id="auth-name" name="username" type="text" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
+    </label>
+    <label class="field">
+      <span>Passwort</span>
+      <input id="auth-pass" name="password" type="password" autocomplete="current-password">
+    </label>
+    <p id="auth-error" class="auth-error" role="alert"></p>
+    <button id="auth-submit" type="submit" class="go ink">Anmelden</button>
+    <p class="auth-switch"><span id="auth-switch-text">Neu hier?</span> <button type="button" id="auth-switch" class="link">Konto erstellen</button></p>
+    <p class="auth-note">Dein Konto und dein Lernstand liegen nur in diesem Browser. Löschst du die Browserdaten, ist das Konto weg.</p>
+  </form>
+</main>
+
+<!-- ---------- Profil ---------- -->
+<main id="screen-profile" class="screen room profile hidden">
+  <div class="room-top">
+    <button class="pill back" data-back="home">Alle Fächer</button>
+  </div>
+  <h1 id="profile-title" class="room-title"></h1>
+  <p id="profile-lede" class="room-lede"></p>
+  <div id="profile-days" class="days" role="img" aria-label="Die letzten 14 Tage, ausgefüllt sind Tage, an denen du geübt hast"></div>
+  <div id="profile-subjects" class="reports"></div>
+  <div class="profile-foot">
+    <button id="btn-logout" class="pill">Abmelden</button>
+    <p class="auth-note">Dein Lernstand liegt nur in diesem Browser. Löschst du die Browserdaten, ist das Konto weg.</p>
+  </div>
 </main>
 
 <!-- ---------- Units ---------- -->
@@ -144,6 +180,8 @@
 <script src="/franzoesisch-unit-1.js"></script>
 <script src="/franzoesisch-unit-2.js"></script>
 <script src="/subjects.js"></script>
+<script src="/auth.js"></script>
+<script src="/progress.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

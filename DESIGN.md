@@ -47,3 +47,11 @@ Beide werden über Fontsource mitgebündelt, keine Anfragen an Google.
 - Beschriftungen als Fragen in normaler Schreibweise ("Was willst du üben?").
 - Bewegung nur als Antwort auf eine Aktion; `prefers-reduced-motion` schaltet
   sie ab.
+
+## Konto und Profil
+
+- Startseite: Pille oben rechts ("Anmelden" oder der Benutzername). Angemeldet zeigen Bänder und
+  Unit-Zeilen eine dünne Schiene, wie viel schon sitzt (2 richtige in Folge).
+- Profil = Zeugnis: pro Fach ein Blatt in der Fachfarbe mit grossen Zahlen (richtig, Runden, sitzen),
+  Schiene pro Unit, "Das fällt dir schwer" und "Schwache Wörter üben". Darüber 14 Punkte für die letzten Tage.
+- Anmelden: eine Karte auf Papier, zwei Felder, kleiner Umschalter zu "Konto erstellen".

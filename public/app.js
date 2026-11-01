@@ -108,12 +108,42 @@ function showHome() {
     b.querySelector(".band-name").textContent = subject.short || subject.name;
     b.querySelector(".band-count").textContent = unitsLabel(subject);
     if (subject.short) b.querySelector(".band-full").textContent = subject.name;
+    const meter = bandMeter(subject);
+    if (meter) b.querySelector(".band-meta").appendChild(meter);
     b.setAttribute("aria-label", subject.name + ", " + unitsLabel(subject));
     b.addEventListener("click", () => openSubject(b, subject));
     box.appendChild(b);
   });
   paint(null);
+  renderAccountButton();
   showScreen("home");
+}
+
+// Kleine Anzeige im Band: wie viel von den Karten schon sitzt (nur angemeldet).
+function bandMeter(subject) {
+  let total = 0;
+  let mastered = 0;
+  let active = false;
+  subject.units.forEach((unit) => {
+    if (!(unit.entries || []).length) return;
+    const st = Progress.unitStats(unit, subject);
+    total += st.total;
+    mastered += st.mastered;
+    active = st.active;
+  });
+  if (!active || !total) return null;
+  const el = document.createElement("span");
+  el.className = "band-meter";
+  el.innerHTML = '<span class="rail"><i></i></span><span class="band-meter-text"></span>';
+  el.querySelector("i").style.setProperty("--p", mastered / total);
+  el.querySelector(".band-meter-text").textContent = mastered + " von " + total + " sitzen";
+  return el;
+}
+
+function renderAccountButton() {
+  const user = Auth.current();
+  $("btn-account").textContent = user ? user.name : "Anmelden";
+  $("btn-account").setAttribute("aria-label", user ? "Profil von " + user.name : "Anmelden oder Konto erstellen");
 }
 
 // Das angetippte Band waechst ueber den Bildschirm, dann kommt das Fach.
@@ -143,6 +173,15 @@ function showUnits(subject) {
     b.innerHTML = '<span class="row-name"></span><span class="row-count"></span>';
     b.querySelector(".row-name").textContent = unit.name;
     b.querySelector(".row-count").textContent = unitCount(unit);
+    const st = (unit.entries || []).length ? Progress.unitStats(unit, subject) : null;
+    if (st && st.active) {
+      b.querySelector(".row-count").textContent = st.mastered + " von " + st.total + " sitzen";
+      const rail = document.createElement("span");
+      rail.className = "rail";
+      rail.innerHTML = "<i></i>";
+      rail.querySelector("i").style.setProperty("--p", st.mastered / st.total);
+      b.appendChild(rail);
+    }
     b.addEventListener("click", () => (unit.entries && unit.entries.length ? showSetup(unit) : showFiles(unit)));
     box.appendChild(b);
   });
@@ -284,19 +323,83 @@ function applySettings(s) {
 
 let session = null;
 
+const SCREENS = ["home", "unit", "files", "start", "quiz", "end", "auth", "profile"];
+
 function showScreen(name) {
-  ["home", "unit", "files", "start", "quiz", "end"].forEach((n) => {
+  SCREENS.forEach((n) => {
     $("screen-" + n).classList.toggle("hidden", n !== name);
   });
   window.scrollTo(0, 0);
+  savePlace(name);
 }
 
-function startSession(pool, settings) {
+/* ---------------- Wo war ich? ---------------- */
+
+// Nach einem Neuladen geht es auf dem gleichen Bildschirm weiter.
+// Eine laufende Runde wird nicht fortgesetzt: dann landet man wieder beim Einrichten.
+const PLACE_KEY = "lb-place";
+
+function savePlace(name) {
+  if (name === "auth") return;
+  let screen = name;
+  if (name === "quiz" || name === "end") screen = current.unit ? "start" : current.subject ? "profile" : "home";
+  try {
+    localStorage.setItem(
+      PLACE_KEY,
+      JSON.stringify({
+        screen: screen,
+        subjectId: current.subject ? current.subject.id : null,
+        unitId: current.unit ? current.unit.id : null,
+      })
+    );
+  } catch (e) {
+    /* Privatmodus o.ae. - egal */
+  }
+}
+
+function restorePlace() {
+  let place = null;
+  try {
+    place = JSON.parse(localStorage.getItem(PLACE_KEY));
+  } catch (e) {
+    /* kein Ort gespeichert */
+  }
+  const subject = place && SUBJECTS.find((x) => x.id === place.subjectId);
+  const unit = subject && subject.units.find((x) => x.id === place.unitId);
+  if (place && place.screen === "profile" && Auth.current()) return showProfile();
+  if (subject && place.screen === "unit") return showUnits(subject);
+  if (subject && unit && place.screen === "files") {
+    showUnits(subject);
+    return showFiles(unit);
+  }
+  if (subject && unit && place.screen === "start" && unit.entries && unit.entries.length) {
+    showUnits(subject);
+    return showSetup(unit);
+  }
+  showHome();
+}
+
+// Eingeloggt: Woerter, die du schon falsch hattest, kommen eher frueh dran.
+function smartOrder(pool, unitOf) {
+  if (!Auth.current()) return shuffle(pool);
+  return pool
+    .map((e) => ({ e: e, k: Math.random() - Math.min(Progress.missesOf(unitOf(e), current.subject, e), 4) * 0.2 }))
+    .sort((a, b) => a.k - b.k)
+    .map((x) => x.e);
+}
+
+// unitOf: Eintrag -> Unit (bei der Schwache-Woerter-Runde kommen sie aus mehreren Units).
+function startSession(pool, settings, unitOf) {
+  const unitFor = unitOf || (() => current.unit);
   session = {
     pool: pool,
     settings: settings,
     sides: current.subject.sides,
-    queue: shuffle(pool),
+    unitFor: unitFor,
+    attempts: 0,
+    rights: 0,
+    recorded: false,
+    queue: smartOrder(pool, unitFor),
     done: new Set(),
     tries: new Map(), // Eintrag -> Anzahl Fehlversuche
     streak: 0,
@@ -388,6 +491,9 @@ function resolve(result) {
   const entry = currentEntry();
   const solution = entry[session.lang];
   const fb = $("feedback");
+  session.attempts++;
+  if (result !== "bad") session.rights++;
+  Progress.recordAnswer(session.unitFor(entry), current.subject, entry, result !== "bad");
   fb.classList.remove("hidden", "is-good", "is-near", "is-bad");
 
   if (result === "good" || result === "near") {
@@ -432,6 +538,22 @@ function resolve(result) {
 function endSession() {
   const s = session;
   const hard = Array.from(s.tries.keys());
+  const unitId = current.unit ? current.unit.id : "weak";
+  const before = Progress.rounds(current.subject.id).filter((r) => r.unitId === unitId).slice(-1)[0];
+  if (!s.recorded && s.attempts) {
+    s.recorded = true;
+    Progress.recordRound({
+      subjectId: current.subject.id,
+      unitId: unitId,
+      total: s.pool.length,
+      done: s.done.size,
+      retried: hard.length,
+      attempts: s.attempts,
+      rights: s.rights,
+      dir: s.settings.direction,
+      mode: s.settings.mode,
+    });
+  }
   showScreen("end");
   const firstTry = Array.from(s.done).filter((e) => !s.tries.has(e)).length;
   const n = (x) => "<b>" + x + "</b>";
@@ -440,14 +562,172 @@ function endSession() {
       n(firstTry) + (firstTry === 1 ? " sass" : " sassen") + " auf Anhieb, " + n(hard.length) + " musstest du wiederholen. " +
       "Längste Serie: " + n(s.bestStreak) + " richtig in Folge."
     : "Diesmal hat noch nichts gesessen. Starte die Runde gleich nochmal, beim zweiten Mal geht es leichter.";
+  if (before && s.done.size) {
+    const prev = before.done - before.retried;
+    $("summary").innerHTML += " Letztes Mal sassen " + n(prev) + " auf Anhieb.";
+  }
   const btn = $("btn-again-hard");
   btn.classList.toggle("hidden", hard.length === 0);
-  btn.onclick = () => startSession(hard, s.settings);
+  btn.onclick = () => startSession(hard, s.settings, s.unitFor);
 }
+
+/* ---------------- Konto ---------------- */
+
+let authMode = "login";
+
+function showAuth(mode) {
+  authMode = mode || "login";
+  const signup = authMode === "signup";
+  $("auth-title").textContent = signup ? "Konto erstellen" : "Anmelden";
+  $("auth-submit").textContent = signup ? "Konto erstellen" : "Anmelden";
+  $("auth-switch-text").textContent = signup ? "Schon ein Konto?" : "Neu hier?";
+  $("auth-switch").textContent = signup ? "Anmelden" : "Konto erstellen";
+  $("auth-pass").autocomplete = signup ? "new-password" : "current-password";
+  $("auth-error").textContent = "";
+  paint(null);
+  showScreen("auth");
+  $("auth-name").focus();
+}
+
+$("auth-switch").addEventListener("click", () => showAuth(authMode === "signup" ? "login" : "signup"));
+$("auth-back").addEventListener("click", showHome);
+$("btn-account").addEventListener("click", () => (Auth.current() ? showProfile() : showAuth("login")));
+
+$("auth-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = $("auth-name").value;
+  const pass = $("auth-pass").value;
+  $("auth-submit").disabled = true;
+  const res = authMode === "signup" ? await Auth.signUp(name, pass) : await Auth.logIn(name, pass);
+  $("auth-submit").disabled = false;
+  if (!res.ok) {
+    $("auth-error").textContent = res.error;
+    return;
+  }
+  $("auth-form").reset();
+  showProfile();
+});
+
+/* ---------------- Profil ---------------- */
+
+const pct = (n) => (n === null ? "–" : n + "%");
+
+function showProfile() {
+  const user = Auth.current();
+  if (!user) return showAuth("login");
+  current = { subject: null, unit: null, sets: [] };
+  paint(null);
+  $("profile-title").textContent = user.name;
+
+  const streak = Progress.streakDays();
+  $("profile-lede").textContent = streak
+    ? streak + (streak === 1 ? " Tag" : " Tage") + " in Folge geübt."
+    : "Übe heute, dann startet deine Serie.";
+
+  const strip = $("profile-days");
+  strip.innerHTML = "";
+  Progress.lastDays(14).forEach((d) => {
+    const dot = document.createElement("i");
+    if (d.practiced) dot.className = "on";
+    dot.title = d.day;
+    strip.appendChild(dot);
+  });
+
+  const box = $("profile-subjects");
+  box.innerHTML = "";
+  SUBJECTS.filter((x) => x.units.some((u) => (u.entries || []).length)).forEach((subject) => {
+    box.appendChild(subjectCard(subject));
+  });
+  showScreen("profile");
+}
+
+function subjectCard(subject) {
+  const card = document.createElement("section");
+  card.className = "report";
+  card.dataset.subject = subject.id;
+  const units = subject.units.filter((u) => (u.entries || []).length);
+  const rounds = Progress.rounds(subject.id);
+  const stats = units.map((u) => ({ unit: u, st: Progress.unitStats(u, subject) }));
+  const mastered = stats.reduce((a, x) => a + x.st.mastered, 0);
+  const total = stats.reduce((a, x) => a + x.st.total, 0);
+  const weak = Progress.weakWords(subject);
+
+  card.innerHTML =
+    '<h2 class="report-name"></h2>' +
+    '<dl class="figures">' +
+    '<div><dd class="fig-acc"></dd><dt>richtig</dt></div>' +
+    '<div><dd class="fig-rounds"></dd><dt></dt></div>' +
+    '<div><dd class="fig-seat"></dd><dt>sitzen</dt></div>' +
+    "</dl>" +
+    '<div class="report-units"></div>' +
+    '<div class="report-weak"></div>';
+  card.querySelector(".report-name").textContent = subject.name;
+  card.querySelector(".fig-acc").textContent = pct(Progress.accuracy(subject));
+  card.querySelector(".fig-rounds").textContent = rounds.length;
+  card.querySelector(".fig-rounds").nextElementSibling.textContent = rounds.length === 1 ? "Runde" : "Runden";
+  card.querySelector(".fig-seat").textContent = mastered + "/" + total;
+
+  const ul = card.querySelector(".report-units");
+  stats.forEach(({ unit, st }) => {
+    const row = document.createElement("div");
+    row.className = "report-unit";
+    row.innerHTML = '<span class="ru-name"></span><span class="ru-count"></span><span class="rail"><i></i></span>';
+    row.querySelector(".ru-name").textContent = unit.name;
+    row.querySelector(".ru-count").textContent = st.mastered + " von " + st.total;
+    row.querySelector("i").style.setProperty("--p", st.mastered / st.total);
+    ul.appendChild(row);
+  });
+
+  const wk = card.querySelector(".report-weak");
+  if (!weak.length) {
+    wk.innerHTML = '<p class="weak-none"></p>';
+    wk.firstChild.textContent = rounds.length
+      ? "Nichts, was du oft falsch hast. Weiter so."
+      : "Mach eine Runde, dann zeigt dir das Profil hier deine schwersten Wörter.";
+  } else {
+    const h = document.createElement("h3");
+    h.textContent = "Das fällt dir schwer";
+    const list = document.createElement("ol");
+    weak.slice(0, 6).forEach((w) => {
+      const li = document.createElement("li");
+      li.innerHTML = '<span class="w-word"></span><span class="w-de"></span><span class="w-n"></span>';
+      li.querySelector(".w-word").textContent = w.entry[subject.sides[1].key];
+      li.querySelector(".w-de").textContent = w.entry[subject.sides[0].key];
+      li.querySelector(".w-n").textContent = w.wrong + "× falsch";
+      list.appendChild(li);
+    });
+    const go = document.createElement("button");
+    go.className = "go";
+    go.textContent = "Schwache Wörter üben (" + Math.min(weak.length, WEAK_ROUND) + ")";
+    go.addEventListener("click", () => startWeakSession(subject));
+    wk.append(h, list, go);
+  }
+  return card;
+}
+
+const WEAK_ROUND = 15;
+
+// Eine Runde nur mit den Woertern, die du am haeufigsten falsch hattest (aus allen Units).
+function startWeakSession(subject) {
+  const weak = Progress.weakWords(subject, WEAK_ROUND);
+  if (!weak.length) return;
+  const unitOf = new Map(weak.map((w) => [w.entry, w.unit]));
+  current = { subject: subject, unit: null, sets: [] };
+  startSession(
+    weak.map((w) => w.entry),
+    { sets: [], direction: "mixed", mode: "write" },
+    (e) => unitOf.get(e)
+  );
+}
+
+$("btn-logout").addEventListener("click", () => {
+  Auth.logOut();
+  showHome();
+});
 
 /* ---------------- Verdrahtung ---------------- */
 
-showHome();
+restorePlace();
 
 document.querySelectorAll("[data-back]").forEach((b) => {
   b.addEventListener("click", () => {
@@ -490,7 +770,7 @@ $("btn-unknown").addEventListener("click", () => resolve("bad"));
 $("btn-next").addEventListener("click", nextQuestion);
 
 $("btn-quit").addEventListener("click", endSession);
-$("btn-home").addEventListener("click", () => showScreen("start"));
+$("btn-home").addEventListener("click", () => (current.unit ? showScreen("start") : showProfile()));
 
 // Enter fuehrt ueberall weiter.
 document.addEventListener("keydown", (e) => {
