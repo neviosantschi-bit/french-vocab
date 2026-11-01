@@ -468,6 +468,12 @@ function nextQuestion() {
   session.promptLang = ask.key;
   session.answered = false;
 
+  // Nur Darstellung: die naechste Karte wird aufgelegt (Animation in style.css).
+  const card = document.querySelector(".ask");
+  card.classList.remove("deal");
+  void card.offsetWidth;
+  card.classList.add("deal");
+
   $("prompt-lang").textContent = ask.name;
   $("prompt").textContent = entry[ask.key];
 
@@ -665,6 +671,7 @@ function showProfile() {
   if (!user) return showAuth("login");
   current = { subject: null, unit: null, sets: [] };
   paint(null);
+  askReset(false);
   $("profile-title").textContent = user.name;
 
   const streak = Progress.streakDays();
@@ -813,6 +820,22 @@ function startWeakSession(subject, unit) {
     "weak"
   );
 }
+
+// Zuruecksetzen mit Rueckfrage, damit man es nicht aus Versehen tut.
+function askReset(asking) {
+  $("btn-reset").classList.toggle("hidden", asking);
+  $("btn-logout").classList.toggle("hidden", asking);
+  $("reset-confirm").classList.toggle("hidden", !asking);
+  if (asking) $("btn-reset-no").focus();
+}
+
+$("btn-reset").addEventListener("click", () => askReset(true));
+$("btn-reset-no").addEventListener("click", () => askReset(false));
+$("btn-reset-yes").addEventListener("click", () => {
+  Progress.reset();
+  askReset(false);
+  showProfile();
+});
 
 $("btn-logout").addEventListener("click", () => {
   Auth.logOut();

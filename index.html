@@ -59,7 +59,15 @@
   <div id="profile-days" class="days" role="img" aria-label="Die letzten 14 Tage, ausgefüllt sind Tage, an denen du geübt hast"></div>
   <div id="profile-subjects" class="reports"></div>
   <div class="profile-foot">
-    <button id="btn-logout" class="pill">Abmelden</button>
+    <div class="foot-actions">
+      <button id="btn-logout" class="pill">Abmelden</button>
+      <button id="btn-reset" class="pill">Statistik zurücksetzen</button>
+      <span id="reset-confirm" class="reset-confirm hidden">
+        <span>Alles löschen?</span>
+        <button id="btn-reset-yes" class="pill danger">Ja, löschen</button>
+        <button id="btn-reset-no" class="pill">Abbrechen</button>
+      </span>
+    </div>
     <p class="auth-note">Dein Lernstand liegt nur in diesem Browser. Löschst du die Browserdaten, ist das Konto weg.</p>
   </div>
 </main>
@@ -127,10 +135,12 @@
     <span id="progress-text" class="count"></span>
   </div>
 
-  <div class="ask">
-    <p id="prompt-lang" class="ask-side"></p>
-    <p id="prompt" class="ask-prompt"></p>
-    <p id="streak" class="streak" aria-live="polite"></p>
+  <div class="deck">
+    <div class="ask">
+      <p id="prompt-lang" class="ask-side"></p>
+      <p id="prompt" class="ask-prompt"></p>
+      <p id="streak" class="streak" aria-live="polite"></p>
+    </div>
   </div>
 
   <div class="respond">

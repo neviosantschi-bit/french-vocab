@@ -181,5 +181,16 @@ const Progress = (() => {
     return n;
   }
 
-  return { STATES, stateOf, recordAnswer, recordRound, wordState, unitSummary, setSummary, weakWords, weight, rounds, unitRounds, lastDays, streakDays };
+  // Loescht den ganzen Lernstand dieses Benutzers (das Konto bleibt).
+  function reset() {
+    const k = storeKey();
+    if (!k) return;
+    try {
+      localStorage.removeItem(k);
+    } catch (e) {
+      /* egal */
+    }
+  }
+
+  return { reset, STATES, stateOf, recordAnswer, recordRound, wordState, unitSummary, setSummary, weakWords, weight, rounds, unitRounds, lastDays, streakDays };
 })();

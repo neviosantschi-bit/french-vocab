@@ -1,19 +1,26 @@
 # Design
 
-Jedes Fach ist ein farbiger Ordner, wie im Schulzimmer.
+Karteikarte: Jedes Fach ist ein farbiger Ordner, darin liegt Papier.
 
 ## Idee
 
-- **Startseite:** Die Fächer sind Farbbänder, die zusammen den ganzen Bildschirm
-  füllen. Mit der Maus über ein Band fahren: Es wird grösser und die Schrift
-  zieht sich in die Breite. Antippen: Das Band wächst über den ganzen
-  Bildschirm und wird zur Seite des Fachs.
-- **Im Fach:** Units, Einstellungen, Quiz und Auswertung liegen ganz in der
-  Farbe des Fachs. Die Auflösung im Quiz schiebt sich als Blatt Papier von
-  unten ins Bild.
-- **Mutig ist nur die Schrift.** Anybody ist eine Variable Font mit Breitenachse;
-  Titel und Knöpfe ziehen sich bei Hover in die Breite. Alles andere bleibt
-  ruhig: Pillen, Linien, keine Schatten ausser beim Antwortblatt.
+- **Startseite:** Die Fächer stecken wie Ordner in einer Schublade. Jeder hat einen
+  Reiter an einer anderen Stelle, im Reiter steht der Zähler ("2 Units", "Noch leer").
+  Mit der Maus über einen Ordner fahren: Er hebt sich, wird grösser und die Schrift
+  zieht sich in die Breite. Antippen: Der Ordner wächst über den ganzen Bildschirm.
+- **Im Fach:** Der Hintergrund ist die Fachfarbe mit dem Linienmuster des Fachs.
+  Units, Einstellungen und das Ergebnis liegen als helles Blatt darauf, liniert
+  und mit rotem Rand wie Schulpapier. Auswahl-Knöpfe nehmen die Fachfarbe.
+- **Quiz:** Die Frage steht auf einer Karteikarte (Lineatur, roter Rand) mit zwei
+  Karten dahinter. Die nächste Karte wird aufgelegt. Die Auflösung schiebt sich als
+  Blatt von unten ins Bild, mit einem Streifen in Grün, Gelb oder Rot.
+- **Profil:** Jedes Fach ist ein Ordner mit Reiter. Darin liegt ein Blatt mit den
+  Objectifs und den schwierigen Wörtern.
+- **Mutig ist nur die Schrift und die Karte.** Anybody ist eine Variable Font mit
+  Breitenachse; Titel und Knöpfe ziehen sich bei Hover in die Breite. Alles andere
+  bleibt ruhig: Pillen, weiche Schatten, keine Verläufe.
+- Das Papier bleibt in Hell und Dunkel hell, es ist ein Gegenstand auf dem Tisch.
+  Nur der Tisch (Startseite, Profil, Anmelden) wechselt.
 
 ## Farben
 
@@ -30,7 +37,7 @@ Jedes Fach hat sein eigenes dünnes Linienmuster (SVG in `public/patterns/`, als
 Schriftfarbe): Französisch Wellenringe, Englisch Wellen, Deutsch Schuppen, Mathe Ellipsen,
 NT Höhenlinien, RZG Spirale. Nur auf den Fachseiten, nicht auf der Startseite.
 
-Papier `#f4f5fa`, Tinte `#191c3d` (im Dunkelmodus vertauscht).
+Tisch `#f4f5fa`, Tinte `#191c3d` (im Dunkelmodus vertauscht). Blatt `#fcfcfe`, Linien `#d6ddee`, roter Rand `#ef9f97`.
 Neues Fach: Farbe in `src/style.css` unter `[data-subject="…"]` eintragen.
 
 ## Schrift
