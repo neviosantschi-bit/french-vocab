@@ -82,3 +82,13 @@ Beide werden über Fontsource mitgebündelt, keine Anfragen an Google.
 - Eine einzige Animationsschleife, die schläft, wenn nichts mehr in Bewegung ist.
   Aus bei "weniger Bewegung" und auf Touchgeräten.
 - Tab-Symbol: eine weisse Karteikarte auf Marineblau, nur zwei flache Farben.
+
+## Tests
+
+- **Ordner "Tests"** liegt zuoberst in der Schublade (Marineblau `#2a2e5c`, Schrift weiss, eigenes Ringmuster).
+  Im Reiter steht "5 anstehend" oder "Keine Tests".
+- **Kalender:** Monatsraster auf Papier, Montag zuerst, heute als gefüllter Kreis. Tests sind Pillen in der Fachfarbe,
+  auf dem Handy nur Punkte. Tag antippen zeigt darunter die Tests dieses Tages, sonst die des Monats.
+- **Eintragen/Details** sind Papier-Fenster mit Fachfarbe im Reiter. Jeder Angemeldete darf Tests eintragen, ändern
+  und löschen (Löschen mit Rückfrage). Angehängte Units öffnen direkt das Üben.
+- **"Nächster Test"** steht neben "Lernblatt" und auf jeder Fachseite als Pille.

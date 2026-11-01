@@ -119,6 +119,7 @@ function showHome() {
   const box = $("subject-list");
   box.classList.remove("opening");
   box.innerHTML = "";
+  box.appendChild(testsBand());
   SUBJECTS.forEach((subject) => {
     const b = document.createElement("button");
     b.className = "band" + (subject.units.some(hasContent) ? "" : " is-empty");
@@ -138,6 +139,30 @@ function showHome() {
   paint(null);
   renderAccountButton();
   showScreen("home");
+  if (typeof refreshTestHints === "function") refreshTestHints();
+}
+
+// Der Ordner "Tests" liegt zuoberst in der Schublade und oeffnet den Kalender.
+function testsBand() {
+  const b = document.createElement("button");
+  b.className = "band band-tests";
+  b.dataset.subject = "tests";
+  b.innerHTML =
+    '<span class="band-name">Tests</span>' +
+    '<span class="band-meta"><span class="band-count"></span><span class="band-full"></span></span>';
+  b.querySelector(".band-count").textContent = Tests.countLabel();
+  b.setAttribute("aria-label", "Tests, " + Tests.countLabel());
+  b.addEventListener("click", () => openTests(b));
+  return b;
+}
+
+function openTests(band) {
+  const box = $("subject-list");
+  if (box.classList.contains("opening")) return;
+  if (reducedMotion()) return showTests();
+  band.classList.add("is-open");
+  box.classList.add("opening");
+  setTimeout(showTests, 480);
 }
 
 // Kleine Anzeige im Band: wie gut die Karten des Fachs sitzen (nur angemeldet).
@@ -210,6 +235,7 @@ function showUnits(subject) {
   $("unit-empty").classList.toggle("hidden", subject.units.length > 0);
   paint(subject);
   showScreen("unit");
+  if (typeof refreshTestHints === "function") refreshTestHints();
 }
 
 // Unit ohne Karten: Liste zum Herunterladen, oder "Noch leer".
@@ -342,7 +368,7 @@ function applySettings(s) {
 
 let session = null;
 
-const SCREENS = ["home", "unit", "files", "start", "quiz", "end", "auth", "profile"];
+const SCREENS = ["home", "unit", "files", "start", "quiz", "end", "auth", "profile", "tests"];
 
 function showScreen(name) {
   SCREENS.forEach((n) => {
@@ -386,6 +412,7 @@ function restorePlace() {
   const subject = place && SUBJECTS.find((x) => x.id === place.subjectId);
   const unit = subject && subject.units.find((x) => x.id === place.unitId);
   if (place && place.screen === "profile" && Auth.current()) return showProfile();
+  if (place && place.screen === "tests" && typeof showTests === "function") return showTests();
   if (subject && place.screen === "unit") return showUnits(subject);
   if (subject && unit && place.screen === "files") {
     showUnits(subject);
@@ -620,6 +647,13 @@ function endSession() {
 
 /* ---------------- Konto ---------------- */
 
+// Wo das Konto liegt, ehrlich gesagt.
+function accountNote() {
+  return Auth.cloudOn()
+    ? "Dein Konto und dein Lernstand liegen in der Datenbank. Du kannst dich mit Benutzername und Passwort auf jedem Gerät anmelden."
+    : "Dein Konto und dein Lernstand liegen nur in diesem Browser. Löschst du die Browserdaten, ist das Konto weg.";
+}
+
 let authMode = "login";
 let authReturn = false; // true: nach dem Anmelden zurueck, wo man war (z. B. zum Einrichten einer Runde)
 
@@ -633,6 +667,7 @@ function showAuth(mode, returnBack) {
   $("auth-switch").textContent = signup ? "Anmelden" : "Konto erstellen";
   $("auth-pass").autocomplete = signup ? "new-password" : "current-password";
   $("auth-error").textContent = "";
+  document.querySelectorAll(".auth-card .auth-note, .profile-foot .auth-note").forEach((el) => (el.textContent = accountNote()));
   paint(null);
   showScreen("auth");
   $("auth-name").focus();
@@ -672,6 +707,7 @@ function showProfile() {
   current = { subject: null, unit: null, sets: [] };
   paint(null);
   askReset(false);
+  document.querySelectorAll(".profile-foot .auth-note").forEach((el) => (el.textContent = accountNote()));
   $("profile-title").textContent = user.name;
 
   const streak = Progress.streakDays();
@@ -844,7 +880,14 @@ $("btn-logout").addEventListener("click", () => {
 
 /* ---------------- Verdrahtung ---------------- */
 
-restorePlace();
+// Die Datenbank meldet sich nach dem Start, oder ein Stand wurde abgeglichen: Bildschirm neu zeichnen,
+// aber nie mitten in einer Runde oder beim Anmelden.
+function refreshScreen() {
+  const busy = ["quiz", "end", "auth"].some((n) => !$("screen-" + n).classList.contains("hidden"));
+  if (!busy) restorePlace();
+}
+window.addEventListener("cloud:ready", refreshScreen);
+window.addEventListener("lb:progress", refreshScreen);
 
 document.querySelectorAll("[data-back]").forEach((b) => {
   b.addEventListener("click", () => {

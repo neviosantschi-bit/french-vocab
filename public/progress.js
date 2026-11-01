@@ -7,6 +7,10 @@
 //         h = die letzten Antworten, "1" richtig, "0" falsch, neueste zuletzt (z. B. "0101")
 // rounds: fertige und abgebrochene Runden, neueste zuletzt
 // days:   Tage (YYYY-MM-DD), an denen geuebt wurde
+// resetAt: (optional) Zeitpunkt, an dem der Lernstand zurueckgesetzt wurde; aelteres zaehlt nicht mehr
+//
+// Mit Datenbank (Auth.current().cloud) wird alles zusaetzlich in der Cloud gesichert und
+// zwischen Geraeten abgeglichen. localStorage bleibt der schnelle Zwischenspeicher.
 
 const Progress = (() => {
   const VERSION = 2;
@@ -49,11 +53,106 @@ const Progress = (() => {
     return { v: VERSION, words: {}, rounds: [], days: old && Array.isArray(old.days) ? old.days : [] };
   }
 
-  function save(data) {
+  function writeLocal(data) {
     try {
       localStorage.setItem(storeKey(), JSON.stringify(data));
     } catch (e) {
       /* Privatmodus o.ae. - egal */
+    }
+  }
+
+  function save(data) {
+    writeLocal(data);
+    schedulePush();
+  }
+
+  /* ---------------- Cloud ---------------- */
+
+  const cloudUser = () => {
+    const u = Auth.current();
+    return u && u.cloud && window.Cloud && window.Cloud.enabled ? u : null;
+  };
+
+  let pushTimer = 0;
+
+  function schedulePush(now) {
+    if (!cloudUser()) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(push, now ? 0 : 1500);
+  }
+
+  async function push() {
+    const u = cloudUser();
+    const data = u && load();
+    if (!data) return;
+    try {
+      await window.Cloud.progress.push(u.key, data);
+    } catch (e) {
+      /* kein Netz: beim naechsten Mal wird wieder abgeglichen */
+    }
+  }
+
+  // Fuehrt zwei Staende zusammen: pro Wort gilt die neuere Antwort, Runden und Tage werden vereint.
+  // Ein Zuruecksetzen (resetAt) gewinnt gegen aelteres.
+  function merge(a, b) {
+    const resetAt = Math.max(a.resetAt || 0, b.resetAt || 0);
+    const words = {};
+    [a.words || {}, b.words || {}].forEach((src) => {
+      Object.keys(src).forEach((k) => {
+        const w = src[k];
+        if (w.last <= resetAt) return;
+        if (!words[k] || w.last > words[k].last) words[k] = w;
+      });
+    });
+    const seen = new Set();
+    let rounds = [];
+    [a.rounds || [], b.rounds || []].forEach((list) =>
+      list.forEach((r) => {
+        const id = r.ts + "|" + r.unitId + "|" + r.kind;
+        if (r.ts <= resetAt || seen.has(id)) return;
+        seen.add(id);
+        rounds.push(r);
+      })
+    );
+    rounds.sort((x, y) => x.ts - y.ts);
+    rounds = rounds.slice(-MAX_ROUNDS);
+    const floor = resetAt ? dayOf(new Date(resetAt)) : "";
+    const days = Array.from(new Set((a.days || []).concat(b.days || []))).filter((d) => d >= floor).sort();
+    const out = { v: VERSION, words: words, rounds: rounds, days: days };
+    if (resetAt) out.resetAt = resetAt;
+    return out;
+  }
+
+  // Holt den Stand aus der Cloud, fuehrt ihn mit dem lokalen zusammen und sichert das Ergebnis.
+  async function sync() {
+    const u = cloudUser();
+    if (!u) return;
+    try {
+      const remote = await window.Cloud.progress.pull();
+      const local = load();
+      const merged = remote && remote.v === VERSION ? merge(local, remote) : local;
+      const changed = JSON.stringify(merged) !== JSON.stringify(local);
+      if (changed) writeLocal(merged);
+      if (!remote || JSON.stringify(merged) !== JSON.stringify(remote)) await window.Cloud.progress.push(u.key, merged);
+      if (changed) window.dispatchEvent(new Event("lb:progress"));
+    } catch (e) {
+      /* kein Netz: lokal geht es weiter */
+    }
+  }
+
+  // Stand aus einem frueheren Konto nur auf diesem Geraet (gleicher Name) einmalig uebernehmen.
+  function adoptLocal(name) {
+    const lk = name.trim().toLowerCase();
+    const flag = "lb-adopted:" + lk;
+    try {
+      if (localStorage.getItem(flag)) return;
+      const old = JSON.parse(localStorage.getItem("lb-progress:" + lk));
+      const mine = load();
+      if (!old || old.v !== VERSION || !mine) return;
+      writeLocal(merge(mine, old));
+      localStorage.setItem(flag, "1");
+    } catch (e) {
+      /* egal */
     }
   }
 
@@ -182,15 +281,12 @@ const Progress = (() => {
   }
 
   // Loescht den ganzen Lernstand dieses Benutzers (das Konto bleibt).
+  // Die Marke resetAt sorgt dafuer, dass aeltere Staende aus der Cloud nicht zurueckkommen.
   function reset() {
-    const k = storeKey();
-    if (!k) return;
-    try {
-      localStorage.removeItem(k);
-    } catch (e) {
-      /* egal */
-    }
+    if (!storeKey()) return;
+    writeLocal({ v: VERSION, words: {}, rounds: [], days: [], resetAt: Date.now() });
+    schedulePush(true);
   }
 
-  return { reset, STATES, stateOf, recordAnswer, recordRound, wordState, unitSummary, setSummary, weakWords, weight, rounds, unitRounds, lastDays, streakDays };
+  return { merge, sync, adoptLocal, reset, STATES, stateOf, recordAnswer, recordRound, wordState, unitSummary, setSummary, weakWords, weight, rounds, unitRounds, lastDays, streakDays };
 })();

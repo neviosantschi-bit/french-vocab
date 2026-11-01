@@ -23,7 +23,7 @@
 <main id="screen-home" class="screen home">
   <header class="masthead">
     <p class="wordmark">Lernblatt</p>
-    <p class="masthead-note">Welches Fach übst du heute?</p>
+    <p id="masthead-note" class="masthead-note">Welches Fach übst du heute?</p>
     <button id="btn-account" class="account">Anmelden</button>
   </header>
   <nav id="subject-list" class="bands" aria-label="Fächer"></nav>
@@ -72,6 +72,34 @@
   </div>
 </main>
 
+<!-- ---------- Tests: der gemeinsame Kalender ---------- -->
+<main id="screen-tests" class="screen room tests hidden">
+  <div class="room-top">
+    <button class="pill back" data-back="home">Alle Fächer</button>
+  </div>
+  <h1 class="room-title">Tests</h1>
+  <p id="tests-lede" class="room-lede"></p>
+  <button id="btn-add-test" class="go add-test">Test hinzufügen</button>
+
+  <div class="cal">
+    <div class="cal-head">
+      <h2 id="cal-title" class="cal-title"></h2>
+      <div class="cal-nav">
+        <button id="cal-prev" class="pill round" aria-label="Voriger Monat"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 5 8 12l7 7"/></svg></button>
+        <button id="cal-today" class="pill">Heute</button>
+        <button id="cal-next" class="pill round" aria-label="Nächster Monat"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7"/></svg></button>
+      </div>
+    </div>
+    <div class="cal-week" aria-hidden="true"><span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span></div>
+    <div id="cal-grid" class="cal-grid"></div>
+  </div>
+
+  <div class="cal-list">
+    <h2 id="cal-list-title" class="cal-list-title"></h2>
+    <div id="cal-list" class="test-list"></div>
+  </div>
+</main>
+
 <!-- ---------- Units ---------- -->
 <main id="screen-unit" class="screen room hidden">
   <div class="room-top">
@@ -79,6 +107,7 @@
   </div>
   <h1 id="unit-title" class="room-title"></h1>
   <p class="room-lede">Welche Unit kommt im Test?</p>
+  <p id="unit-next" class="next-test-wrap hidden"></p>
   <div id="unit-list" class="rows"></div>
   <p id="unit-empty" class="empty hidden"></p>
 </main>
@@ -187,6 +216,39 @@
   </div>
 </main>
 
+<!-- Test eintragen oder aendern -->
+<dialog id="test-form" class="nudge test-dialog" aria-labelledby="tf-heading">
+  <form id="tf" novalidate>
+    <h2 id="tf-heading">Test hinzufügen</h2>
+    <label class="field"><span>Fach</span><select id="tf-subject"></select></label>
+    <label class="field"><span>Was für ein Test?</span><input id="tf-title" type="text" maxlength="80" placeholder="z. B. Wortschatztest" autocomplete="off"></label>
+    <label class="field"><span>Datum</span><input id="tf-date" type="date"></label>
+    <fieldset id="tf-units-group" class="group">
+      <legend>Stoff anhängen</legend>
+      <div id="tf-units" class="chips"></div>
+    </fieldset>
+    <label class="field"><span>Notiz (freiwillig)</span><textarea id="tf-note" maxlength="500" rows="2" placeholder="z. B. Seite 24 bis 27"></textarea></label>
+    <p id="tf-error" class="auth-error" role="alert"></p>
+    <button id="tf-save" type="submit" class="go">Speichern</button>
+    <button id="tf-cancel" type="button" class="link">Abbrechen</button>
+  </form>
+</dialog>
+
+<!-- Ein Test im Detail -->
+<dialog id="test-detail" tabindex="-1" class="nudge test-dialog" aria-labelledby="td-title">
+  <div class="td">
+    <span id="td-subject" class="td-tag"></span>
+    <h2 id="td-title"></h2>
+    <p id="td-when" class="td-when"></p>
+    <p id="td-note" class="td-note"></p>
+    <div id="td-units" class="td-units"></div>
+    <p id="td-author" class="auth-note"></p>
+    <button id="td-edit" type="button" class="go">Bearbeiten</button>
+    <button id="td-delete" type="button" class="link danger-link">Löschen</button>
+    <button id="td-close" type="button" class="link">Schliessen</button>
+  </div>
+</dialog>
+
 <!-- Hinweis, wenn man ohne Konto eine Runde startet -->
 <dialog id="login-nudge" class="nudge" aria-labelledby="nudge-title">
   <form method="dialog">
@@ -203,7 +265,11 @@
 <script src="/subjects.js"></script>
 <script src="/auth.js"></script>
 <script src="/progress.js"></script>
+<script src="/tests-data.js"></script>
 <script src="/app.js"></script>
+<script src="/tests-ui.js"></script>
 <script src="/fx.js"></script>
+<script type="module" src="/src/cloud.js"></script>
+<script src="/boot.js"></script>
 </body>
 </html>

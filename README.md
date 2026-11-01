@@ -1,8 +1,8 @@
 # Lernblatt
 
-Lerntrainer für die ganze Klasse: Fach wählen, Unit wählen, üben. Kein Backend — Konto (Benutzername + Passwort),
-Lernstand, Einstellungen und der letzte Bildschirm liegen im `localStorage` des Geräts. Löscht man die Browserdaten,
-ist das Konto weg.
+Lerntrainer für die ganze Klasse: Fach wählen, Unit wählen, üben, dazu ein gemeinsamer Testkalender.
+Ohne Datenbank (`src/config.js` leer) liegen Konto, Lernstand und Einstellungen nur im `localStorage` des Geräts.
+Mit Datenbank (Supabase) gibt es gemeinsame Konten, synchronen Lernstand und die Tests.
 
 ## Lokal starten
 
@@ -54,3 +54,20 @@ In `public/subjects.js` kann eine Unit statt `entries` eine Liste `files` haben
 (`{ name, note, href }`, PDFs liegen in `public/downloads/`). Eine Unit ganz ohne
 Inhalt (z. B. die Englisch-Stufen A2, B1, B1+) zeigt "Noch leer" und zählt nicht
 als Unit.
+
+## Datenbank einrichten (Supabase, einmalig)
+
+Die Seite braucht dafür ein **eigenes, neues** Supabase-Projekt (nicht ein bestehendes verwenden).
+
+1. Im Supabase-Dashboard ein neues Projekt anlegen (z. B. "lernblatt").
+2. Authentication, Providers, Email: **Confirm email ausschalten** (Konten sind nur Benutzername und Passwort).
+3. SQL Editor: den Inhalt von `supabase/schema.sql` einfügen und ausführen. Das Skript legt nur Tabellen,
+   Zugriffsregeln und einen Trigger an (kein DROP, kein DELETE).
+4. Project Settings, API: **Project URL** und den **anon/publishable Key** in `src/config.js` eintragen.
+   Diese beiden Werte sind öffentlich gedacht. Das Datenbank-Passwort und den `service_role` Key nie ins Repo.
+
+Danach: `npm run build` und deployen. Ohne diese Werte läuft die Seite wie vorher, der Tests-Ordner zeigt "Bald".
+
+- `src/cloud.js` — Verbindung (Anmelden, Tests, Lernstand), Benutzername wird in eine erfundene Adresse verpackt.
+- `public/tests-data.js` / `public/tests-ui.js` — Tests: Daten und Kalender, Eintragen, Details, "Nächster Test".
+- `public/boot.js` — zeigt beim Start den zuletzt besuchten Bildschirm.

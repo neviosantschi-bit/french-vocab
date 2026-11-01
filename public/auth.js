@@ -1,12 +1,17 @@
 "use strict";
 
-// Konto nur auf diesem Geraet (localStorage). Kein Server.
-// Das Passwort wird mit Salz gehasht, damit es nicht im Klartext liegt.
-// Das ist Bequemlichkeit fuer Freunde, kein echter Schutz.
+// Konten. Mit Datenbank (src/config.js ausgefuellt): gemeinsame Konten ueber window.Cloud.
+// Ohne Datenbank: Konto nur auf diesem Geraet (localStorage), Passwort mit Salz gehasht
+// (Bequemlichkeit fuer Freunde, kein echter Schutz).
+//
+// current() ist absichtlich synchron: die Datenbank-Sitzung liegt in localStorage ("lb-auth"),
+// so muss beim Start der Seite niemand auf das Netz warten.
 
 const Auth = (() => {
   const USERS = "lb-users";
   const SESSION = "lb-session";
+  const CLOUD_SESSION = "lb-auth";
+  const CLOUD_FLAG = "lb-cloud";
 
   function read(key, fallback) {
     try {
@@ -34,8 +39,33 @@ const Auth = (() => {
 
   const key = (name) => name.trim().toLowerCase();
 
-  // Alle Funktionen geben { ok: true } oder { ok: false, error: "…" } zurueck.
-  async function signUp(name, password) {
+  /* ---------------- Datenbank ---------------- */
+
+  const cloudReady = () =>
+    window.Cloud
+      ? Promise.resolve(window.Cloud)
+      : new Promise((resolve) => window.addEventListener("cloud:ready", () => resolve(window.Cloud), { once: true }));
+
+  const cloudOn = () => Boolean(window.Cloud && window.Cloud.enabled);
+
+  function cloudSession() {
+    const s = read(CLOUD_SESSION, null);
+    if (s && s.user && s.user.id) {
+      return { key: s.user.id, name: (s.user.user_metadata && s.user.user_metadata.username) || "Konto", cloud: true };
+    }
+    return null;
+  }
+
+  // Nach dem Anmelden: alte Staende dieses Geraets uebernehmen und mit der Datenbank abgleichen.
+  async function afterCloudLogin(name) {
+    if (typeof Progress === "undefined") return;
+    Progress.adoptLocal(name);
+    await Progress.sync();
+  }
+
+  /* ---------------- Nur dieses Geraet ---------------- */
+
+  async function localSignUp(name, password) {
     const k = key(name);
     if (!k) return { ok: false, error: "Gib einen Benutzernamen ein." };
     if (!password) return { ok: false, error: "Gib ein Passwort ein." };
@@ -49,7 +79,7 @@ const Auth = (() => {
     return { ok: true };
   }
 
-  async function logIn(name, password) {
+  async function localLogIn(name, password) {
     const k = key(name);
     if (!k || !password) return { ok: false, error: "Gib Benutzername und Passwort ein." };
     const user = read(USERS, {})[k];
@@ -59,20 +89,54 @@ const Auth = (() => {
     return { ok: true };
   }
 
-  function logOut() {
-    try {
-      localStorage.removeItem(SESSION);
-    } catch (e) {
-      /* egal */
-    }
-  }
-
-  // { key, name } des angemeldeten Benutzers oder null.
-  function current() {
+  function localCurrent() {
     const k = read(SESSION, null);
     const user = k && read(USERS, {})[k];
     return user ? { key: k, name: user.name } : null;
   }
 
-  return { signUp, logIn, logOut, current };
+  /* ---------------- Oeffentlich ---------------- */
+
+  // Alle Funktionen geben { ok: true } oder { ok: false, error: "…" } zurueck.
+  async function signUp(name, password) {
+    const cloud = await cloudReady();
+    if (!cloud.enabled) return localSignUp(name, password);
+    const res = await cloud.signUp(name, password);
+    if (res.ok) await afterCloudLogin(name);
+    return res;
+  }
+
+  async function logIn(name, password) {
+    const cloud = await cloudReady();
+    if (!cloud.enabled) return localLogIn(name, password);
+    const res = await cloud.signIn(name, password);
+    if (res.ok) await afterCloudLogin(name);
+    return res;
+  }
+
+  function logOut() {
+    try {
+      localStorage.removeItem(SESSION);
+      localStorage.removeItem(CLOUD_SESSION);
+    } catch (e) {
+      /* egal */
+    }
+    if (window.Cloud && window.Cloud.enabled) window.Cloud.signOut().catch(() => {});
+  }
+
+  // { key, name, cloud? } des angemeldeten Benutzers oder null.
+  function current() {
+    const cloud = cloudSession();
+    if (cloud) return cloud;
+    // Sobald die Datenbank an ist, gelten alte Geraete-Konten nicht mehr.
+    let cloudMode = false;
+    try {
+      cloudMode = localStorage.getItem(CLOUD_FLAG) === "1";
+    } catch (e) {
+      /* egal */
+    }
+    return cloudMode ? null : localCurrent();
+  }
+
+  return { signUp, logIn, logOut, current, cloudOn, cloudReady };
 })();
