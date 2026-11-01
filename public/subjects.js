@@ -54,7 +54,16 @@ const SUBJECTS = [
     id: "mathematik",
     name: "Mathematik",
     sides: [{ key: "q", name: "Frage" }, { key: "a", name: "Antwort" }],
-    units: [],
+    units: [
+      {
+        id: "ma-gleichungen-terme",
+        name: "Gleichungen und Terme",
+        files: [
+          { name: "Aufgaben", note: "4 Seiten", href: "/downloads/Gleichungen_und_Terme_Aufgaben.pdf" },
+          { name: "Lösungen", note: "5 Seiten", href: "/downloads/Gleichungen_und_Terme_Loesungen.pdf" },
+        ],
+      },
+    ],
   },
   {
     id: "nt",
