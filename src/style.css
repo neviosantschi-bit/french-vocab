@@ -213,6 +213,18 @@ input { caret-color: currentColor; }
   transition: flex-grow 520ms var(--ease), opacity 300ms var(--ease), transform 360ms var(--ease);
 }
 .band:first-child { margin-top: 0; }
+/* Jeder Ordner reicht unter den naechsten, damit hinter den runden Ecken kein Hintergrund durchscheint. */
+.band { isolation: isolate; }
+.band::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 44px;
+  background: var(--c);
+}
 .band:last-child { padding-bottom: 12px; }
 .band:focus-visible { outline-offset: -6px; }
 
@@ -378,7 +390,7 @@ input { caret-color: currentColor; }
 }
 .row-count { color: var(--sheet-soft); }
 .row-get { font-weight: 700; color: var(--sheet-ink); }
-.row:hover .row-name { font-stretch: 145%; }
+@media (hover: hover) { .row:hover .row-name { font-stretch: 145%; } }
 .row .seg { flex: 1 0 100%; margin-top: 14px; }
 
 .empty {
@@ -441,7 +453,7 @@ input { caret-color: currentColor; }
   font-stretch: 125%;
   transition: font-stretch 300ms var(--ease), transform 120ms var(--ease), background 160ms var(--ease);
 }
-.go:hover { font-stretch: 150%; }
+@media (hover: hover) { .go:hover { font-stretch: 150%; } }
 .go:disabled { opacity: 0.4; cursor: default; font-stretch: 125%; }
 .go.ghost { background: transparent; color: var(--on); }
 .go.ink { background: var(--ink); border-color: var(--ink); color: var(--paper); }
@@ -940,14 +952,18 @@ input { caret-color: currentColor; }
 .go, .pill, .account, .choice, .unit-chip, .chip { transition-property: scale, background, color, border-color, box-shadow, font-stretch, opacity, transform; }
 .go, .pill, .account, .unit-chip { transition-duration: 320ms; transition-timing-function: var(--spring); }
 .chip { transition: scale 320ms var(--spring); }
-.go:hover, .pill:hover, .account:hover, .unit-chip:hover, .chip:hover { scale: 1.035; }
-.choice:hover:not(:disabled) { scale: 1.015; }
+@media (hover: hover) {
+  .go:hover, .pill:hover, .account:hover, .unit-chip:hover, .chip:hover { scale: 1.035; }
+  .choice:hover:not(:disabled) { scale: 1.015; }
+}
 .go:active, .pill:active, .account:active, .unit-chip:active, .chip:active, .choice:active:not(:disabled) {
   scale: 0.96;
   transition-duration: 90ms;
   transition-timing-function: var(--ease);
 }
 .go:disabled:hover { scale: 1; }
+
+button, label.chip, .row, .cal-day { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
 /* Ausgewaehlte Chips federn kurz auf. */
 .chip input:checked + span { animation: pop 420ms var(--spring); }
@@ -1262,3 +1278,56 @@ input { caret-color: currentColor; }
 .next-test-wrap .nt-item { background: color-mix(in srgb, var(--sheet-ink) 8%, transparent); color: var(--sheet-ink); }
 .next-test-wrap .nt-item:hover { background: color-mix(in srgb, var(--sheet-ink) 15%, transparent); }
 .next-test-wrap .nt-item i { box-shadow: 0 0 0 1.5px var(--sheet); }
+
+/* =====================================================================
+   Handy: kompakter, damit das Wichtige ohne Scrollen sichtbar ist
+   ===================================================================== */
+
+@media (max-width: 600px) {
+  /* Kopf der Startseite: Wortmarke und Knoepfe in einer Zeile, der Hinweis darunter */
+  .masthead { padding: 12px var(--edge) 10px; column-gap: 10px; row-gap: 8px; }
+  .wordmark { font-size: 1.2rem; }
+  .masthead-actions { gap: 8px; }
+  .account { min-height: 36px; padding: 0 13px; font-size: 0.9375rem; }
+  .tests-count { min-width: 20px; height: 20px; margin-left: 6px; font-size: 0.75rem; }
+  .next-test { padding: 6px 14px; font-size: 0.875rem; }
+
+  /* Ruhigere Abstaende, mehr Platz fuer den Inhalt */
+  .room { padding-top: 14px; }
+  .room-top { margin-bottom: 22px; }
+  .room-title { font-size: clamp(2.2rem, 11vw, 3.4rem); }
+  .room-lede { font-size: 1.125rem; margin-top: 12px; }
+  .rows, .setup { margin-top: 22px; }
+  .row { padding: 18px 18px 18px 58px; }
+
+  /* Einstellungen: dichter, damit "Runde starten" nicht unter dem Rand verschwindet */
+  .setup { padding: 20px 18px; gap: 18px; }
+  .group legend { margin-bottom: 8px; font-size: 1.0625rem; }
+  .chips { gap: 8px; }
+  .chip span { min-height: 44px; padding: 8px 16px; }
+  #btn-start { margin-top: 20px; }
+
+  /* Knoepfe: Schrift etwas schmaler, damit lange Texte in einer Zeile bleiben */
+  .go { min-height: 58px; padding: 14px 22px; font-size: 1.125rem; font-stretch: 112%; }
+  .go:disabled { font-stretch: 112%; }
+
+  /* Quiz: die Karte nimmt weniger Hoehe, so bleibt Platz fuer die Tastatur */
+  .deck { padding-block: 14px; }
+  .ask { min-height: clamp(200px, 34vh, 320px); }
+  .ask-prompt { font-size: clamp(1.9rem, 9vw, 2.8rem); }
+  .respond { padding-bottom: env(safe-area-inset-bottom); }
+  #answer { min-height: 58px; font-size: 1.125rem; }
+  .verdict { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+  .verdict-title { font-size: 1.5rem; }
+
+  /* Ende */
+  #screen-end { justify-content: flex-start; padding-top: 18vh; }
+  .tally { font-size: 1.25rem; }
+  .end-actions { max-width: none; }
+
+  /* Kalender und Fenster */
+  .cal { padding: 12px; }
+  .cal-title { font-size: 1.5rem; }
+  .test-dialog { width: calc(100vw - 20px); padding: 20px 18px; }
+  .field input[type="date"] { padding-right: 12px; }
+}
