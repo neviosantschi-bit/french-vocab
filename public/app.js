@@ -494,7 +494,6 @@ function resolve(result) {
   session.attempts++;
   if (result !== "bad") session.rights++;
   Progress.recordAnswer(session.unitFor(entry), current.subject, entry, result !== "bad");
-  fb.classList.remove("hidden", "is-good", "is-near", "is-bad");
 
   if (result === "good" || result === "near") {
     session.done.add(entry);
@@ -513,6 +512,10 @@ function resolve(result) {
     session.streak = 0;
   }
 
+  // Aufdecken: Du hast dich selbst bewertet, also gleich zur naechsten Karte.
+  if (session.settings.mode === "reveal") return nextQuestion();
+
+  fb.classList.remove("hidden", "is-good", "is-near", "is-bad");
   if (result === "good") {
     fb.classList.add("is-good");
     $("feedback-title").textContent = "Richtig";
@@ -552,6 +555,7 @@ function endSession() {
       rights: s.rights,
       dir: s.settings.direction,
       mode: s.settings.mode,
+      weakOf: s.settings.weakOf || null,
     });
   }
   showScreen("end");
@@ -641,19 +645,32 @@ function showProfile() {
   showScreen("profile");
 }
 
+// Welche Unit im Profil gewaehlt ist, pro Fach gemerkt.
+const profileUnitKey = (subject) => "lb-profile-unit:" + subject.id;
+
+function chosenUnit(subject, units) {
+  let id = null;
+  try {
+    id = localStorage.getItem(profileUnitKey(subject));
+  } catch (e) {
+    /* egal */
+  }
+  return units.find((u) => u.id === id) || units[0];
+}
+
 function subjectCard(subject) {
   const card = document.createElement("section");
   card.className = "report";
   card.dataset.subject = subject.id;
   const units = subject.units.filter((u) => (u.entries || []).length);
-  const rounds = Progress.rounds(subject.id);
-  const stats = units.map((u) => ({ unit: u, st: Progress.unitStats(u, subject) }));
-  const mastered = stats.reduce((a, x) => a + x.st.mastered, 0);
-  const total = stats.reduce((a, x) => a + x.st.total, 0);
-  const weak = Progress.weakWords(subject);
+  const unit = chosenUnit(subject, units);
+  const rounds = Progress.unitRounds(unit);
+  const st = Progress.unitStats(unit, subject);
+  const weak = Progress.weakWords(subject, 0, unit);
 
   card.innerHTML =
     '<h2 class="report-name"></h2>' +
+    '<div class="unit-pick" role="radiogroup"></div>' +
     '<dl class="figures">' +
     '<div><dd class="fig-acc"></dd><dt>richtig</dt></div>' +
     '<div><dd class="fig-rounds"></dd><dt></dt></div>' +
@@ -662,19 +679,40 @@ function subjectCard(subject) {
     '<div class="report-units"></div>' +
     '<div class="report-weak"></div>';
   card.querySelector(".report-name").textContent = subject.name;
-  card.querySelector(".fig-acc").textContent = pct(Progress.accuracy(subject));
+
+  const pick = card.querySelector(".unit-pick");
+  units.forEach((u) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "unit-chip";
+    b.textContent = u.name;
+    b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", String(u === unit));
+    b.addEventListener("click", () => {
+      try {
+        localStorage.setItem(profileUnitKey(subject), u.id);
+      } catch (e) {
+        /* egal */
+      }
+      card.replaceWith(subjectCard(subject));
+    });
+    pick.appendChild(b);
+  });
+
+  card.querySelector(".fig-acc").textContent = pct(Progress.accuracy(subject, unit));
   card.querySelector(".fig-rounds").textContent = rounds.length;
   card.querySelector(".fig-rounds").nextElementSibling.textContent = rounds.length === 1 ? "Runde" : "Runden";
-  card.querySelector(".fig-seat").textContent = mastered + "/" + total;
+  card.querySelector(".fig-seat").textContent = st.mastered + "/" + st.total;
 
+  // Die Teile (Objectifs) dieser Unit.
   const ul = card.querySelector(".report-units");
-  stats.forEach(({ unit, st }) => {
+  Progress.setStats(unit, subject).forEach((set) => {
     const row = document.createElement("div");
     row.className = "report-unit";
     row.innerHTML = '<span class="ru-name"></span><span class="ru-count"></span><span class="rail"><i></i></span>';
-    row.querySelector(".ru-name").textContent = unit.name;
-    row.querySelector(".ru-count").textContent = st.mastered + " von " + st.total;
-    row.querySelector("i").style.setProperty("--p", st.mastered / st.total);
+    row.querySelector(".ru-name").textContent = set.name;
+    row.querySelector(".ru-count").textContent = set.mastered + " von " + set.total;
+    row.querySelector("i").style.setProperty("--p", set.mastered / set.total);
     ul.appendChild(row);
   });
 
@@ -699,7 +737,7 @@ function subjectCard(subject) {
     const go = document.createElement("button");
     go.className = "go";
     go.textContent = "Schwache Wörter üben (" + Math.min(weak.length, WEAK_ROUND) + ")";
-    go.addEventListener("click", () => startWeakSession(subject));
+    go.addEventListener("click", () => startWeakSession(subject, unit));
     wk.append(h, list, go);
   }
   return card;
@@ -708,14 +746,14 @@ function subjectCard(subject) {
 const WEAK_ROUND = 15;
 
 // Eine Runde nur mit den Woertern, die du am haeufigsten falsch hattest (aus allen Units).
-function startWeakSession(subject) {
-  const weak = Progress.weakWords(subject, WEAK_ROUND);
+function startWeakSession(subject, unit) {
+  const weak = Progress.weakWords(subject, WEAK_ROUND, unit);
   if (!weak.length) return;
   const unitOf = new Map(weak.map((w) => [w.entry, w.unit]));
   current = { subject: subject, unit: null, sets: [] };
   startSession(
     weak.map((w) => w.entry),
-    { sets: [], direction: "mixed", mode: "write" },
+    { sets: [], direction: "mixed", mode: "write", weakOf: unit.id },
     (e) => unitOf.get(e)
   );
 }

@@ -86,11 +86,12 @@ const Progress = (() => {
   }
 
   // Woerter, die du am haeufigsten falsch hattest: [{ unit, entry, wrong, right }]
-  function weakWords(subject, limit) {
+  // Mit `only` nur aus dieser Unit.
+  function weakWords(subject, limit, only) {
     const data = load();
     if (!data) return [];
     const out = [];
-    subject.units.forEach((unit) => {
+    subject.units.filter((u) => !only || u === only).forEach((unit) => {
       (unit.entries || []).forEach((entry) => {
         const w = data.words[wordKey(unit, subject, entry)];
         if (w && w.wrong > 0 && w.streak < MASTERED_AT) out.push({ unit, entry, wrong: w.wrong, right: w.right, last: w.last });
@@ -113,12 +114,33 @@ const Progress = (() => {
     return data.rounds.filter((r) => !subjectId || r.subjectId === subjectId);
   }
 
-  function accuracy(subject) {
+  // Runden einer Unit, auch die Schwache-Woerter-Runden, die aus ihr kamen.
+  function unitRounds(unit) {
+    return rounds().filter((r) => r.unitId === unit.id || r.weakOf === unit.id);
+  }
+
+  // Pro Teil (Objectif) einer Unit: [{ name, total, mastered }]
+  function setStats(unit, subject) {
+    const data = load();
+    const out = [];
+    (unit.entries || []).forEach((e) => {
+      const name = e.set || "Alle";
+      let row = out.find((r) => r.name === name);
+      if (!row) out.push((row = { name: name, total: 0, mastered: 0 }));
+      row.total++;
+      const w = data && data.words[wordKey(unit, subject, e)];
+      if (w && w.streak >= MASTERED_AT) row.mastered++;
+    });
+    return out;
+  }
+
+  // Mit `only` nur fuer diese Unit.
+  function accuracy(subject, only) {
     const data = load();
     if (!data) return null;
     let right = 0;
     let wrong = 0;
-    subject.units.forEach((unit) => {
+    subject.units.filter((u) => !only || u === only).forEach((unit) => {
       (unit.entries || []).forEach((e) => {
         const w = data.words[wordKey(unit, subject, e)];
         if (w) {
@@ -156,5 +178,5 @@ const Progress = (() => {
     return n;
   }
 
-  return { recordAnswer, recordRound, unitStats, weakWords, missesOf, rounds, accuracy, lastDays, streakDays };
+  return { recordAnswer, recordRound, unitStats, setStats, unitRounds, weakWords, missesOf, rounds, accuracy, lastDays, streakDays };
 })();
