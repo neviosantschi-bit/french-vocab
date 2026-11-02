@@ -149,6 +149,7 @@
       const [a, b] = subject.sides;
       return [e[b.key], e[a.key], "Vorschau", color];
     }
+    if (unit && unit.game) return [unit.name, "Lernspiel", "10 Module", color];
     if (unit && unit.files && unit.files.length) {
       return [unit.name, unit.files.length + (unit.files.length === 1 ? " Datei" : " Dateien"), "zum Herunterladen", color];
     }

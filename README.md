@@ -71,3 +71,7 @@ Danach: `npm run build` und deployen. Ohne diese Werte läuft die Seite wie vorh
 - `src/cloud.js` — Verbindung (Anmelden, Tests, Lernstand), Benutzername wird in eine erfundene Adresse verpackt.
 - `public/tests-data.js` / `public/tests-ui.js` — Tests: Daten und Kalender, Eintragen, Details, "Nächster Test".
 - `public/boot.js` — zeigt beim Start den zuletzt besuchten Bildschirm.
+
+## Lernspiel "Kräfte" (Natur und Technik)
+
+Unit mit `game: "kraefte"` in `public/subjects.js`. Code in `public/kraefte/` (`physik.js` = Formeln, `core.js` = Gerüst, `levels-a…d.js` = die 10 Level), Stil in `src/kraefte.css`. Spielstand pro Konto in localStorage (`lb-kraefte:<konto>`). Falsche Fragen kommen über eine einfache Wiederholungsliste zurück.

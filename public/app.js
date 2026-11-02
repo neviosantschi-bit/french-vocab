@@ -74,7 +74,7 @@ function unitSets(unit) {
 }
 
 // Eine Unit zaehlt erst, wenn Karten oder Dateien drin sind.
-const hasContent = (unit) => (unit.entries || []).length > 0 || (unit.files || []).length > 0;
+const hasContent = (unit) => (unit.entries || []).length > 0 || (unit.files || []).length > 0 || !!unit.game;
 
 const STATE_NAMES = { sitzt: "sitzt", richtig: "richtig", wackelig: "wackelig", falsch: "falsch", neu: "neu" };
 const SEG_ORDER = ["sitzt", "richtig", "wackelig", "falsch", "neu"];
@@ -181,6 +181,7 @@ function openSubject(band, subject) {
 }
 
 function unitCount(unit) {
+  if (unit.game) return "Lernspiel";
   if (unit.entries && unit.entries.length) return countLabel(unit.entries.length);
   const n = (unit.files || []).length;
   return n ? n + (n === 1 ? " Datei" : " Dateien") : "Noch leer";
@@ -202,7 +203,7 @@ function showUnits(subject) {
       b.querySelector(".row-count").textContent = percent(sum);
       b.appendChild(segBar(sum));
     }
-    b.addEventListener("click", () => (unit.entries && unit.entries.length ? showSetup(unit) : showFiles(unit)));
+    b.addEventListener("click", () => (unit.game ? showGame(unit) : unit.entries && unit.entries.length ? showSetup(unit) : showFiles(unit)));
     box.appendChild(b);
   });
   box.classList.toggle("hidden", !subject.units.length);
@@ -237,6 +238,18 @@ function showFiles(unit) {
   $("files-empty").classList.toggle("hidden", !empty);
   paint(subject);
   showScreen("files");
+}
+
+// Lernspiel (public/kraefte/): eigener dunkler Bildschirm, "Natur und Technik" führt zurück.
+function showGame(unit) {
+  const subject = current.subject;
+  current = { subject: subject, unit: unit, sets: [] };
+  document.body.dataset.subject = "spiel";
+  showScreen("game");
+  KG.open($("kg-root"), () => {
+    KG.close();
+    showUnits(subject);
+  });
 }
 
 function showSetup(unit) {
@@ -344,7 +357,7 @@ function applySettings(s) {
 
 let session = null;
 
-const SCREENS = ["home", "unit", "files", "start", "quiz", "end", "auth", "profile", "tests"];
+const SCREENS = ["home", "unit", "files", "start", "quiz", "end", "auth", "profile", "tests", "game"];
 
 function showScreen(name) {
   SCREENS.forEach((n) => {
@@ -390,6 +403,10 @@ function restorePlace() {
   if (place && place.screen === "profile" && Auth.current()) return showProfile();
   if (place && place.screen === "tests" && typeof showTests === "function") return showTests();
   if (subject && place.screen === "unit") return showUnits(subject);
+  if (subject && unit && unit.game && place.screen === "game") {
+    showUnits(subject);
+    return showGame(unit);
+  }
   if (subject && unit && place.screen === "files") {
     showUnits(subject);
     return showFiles(unit);
