@@ -13,14 +13,67 @@
 // Neue Unit: eigene Datei in public/ anlegen, in index.html vor subjects.js
 // laden und hier unter "units" eintragen.
 
+// Abkürzungen, die in jeder französischen Unit vorkommen (qc, qn). Sie hängen automatisch
+// als letzter Teil an jede Unit: neue Französisch-Units mit frUnit(...) anlegen.
+const FR_ABKUERZUNGEN = [
+  { set: "Abkürzungen", fr: "quelque chose (qc)", de: "etwas (etw.)", example: "J'achète qc. = Ich kaufe etwas.",
+    accept: { fr: ["quelque chose", "qc"], de: ["etwas", "etw."] } },
+  { set: "Abkürzungen", fr: "quelqu'un (qn)", de: "jemand (jmd.)", example: "J'aide qn. = Ich helfe jemandem.",
+    accept: { fr: ["quelqu'un", "qn"], de: ["jemand", "jmd.", "jmdn.", "jmdm."] } },
+];
+// Steigerung: "Marie est ___ que Paul." mit − (moins), + (plus), = (aussi) und einem Adjektiv.
+// In der Klammer steht das Zeichen und das Adjektiv (männlich); gesucht ist z. B. "moins grande".
+// Gefragt wird die Lücke (z. B. "moins grande"); weiblich, wenn die erste Person weiblich ist.
+// fixed = Richtung ist immer Aufgabe → Lösung, label = Titel der Karte, wrong = falsche Auswahl bei "Auswählen".
+const STEIGERUNG = (() => {
+  const SYM = { "−": "moins", "+": "plus", "=": "aussi" };
+  // [Symbol, Person 1, weiblich?, Adjektiv (m), Adjektiv (w), Person 2]
+  const items = [
+    ["−", "Marie", 1, "grand", "grande", "Paul"],
+    ["+", "Paul", 0, "sportif", "sportive", "Marie"],
+    ["=", "Julie", 1, "intelligent", "intelligente", "Léa"],
+    ["−", "Marc", 0, "petit", "petite", "Luc"],
+    ["+", "Sophie", 1, "fort", "forte", "Thomas"],
+    ["=", "Luc", 0, "gentil", "gentille", "Paul"],
+    ["−", "Emma", 1, "rapide", "rapide", "Marie"],
+    ["+", "Thomas", 0, "drôle", "drôle", "Julie"],
+    ["=", "Ma sœur", 1, "content", "contente", "mon frère"],
+    ["−", "Mon frère", 0, "patient", "patiente", "ma sœur"],
+    ["+", "Léa", 1, "heureux", "heureuse", "Sophie"],
+    ["=", "Paul", 0, "timide", "timide", "Marc"],
+    ["+", "La prof", 1, "sympa", "sympa", "le prof"],
+    ["−", "Marie", 1, "lent", "lente", "Julie"],
+    ["+", "Luc", 0, "jeune", "jeune", "Emma"],
+    ["=", "Sophie", 1, "beau", "belle", "Léa"],
+  ];
+  return items.map(([sym, a, f, m, w, b]) => {
+    const adj = f ? w : m;
+    const answer = SYM[sym] + " " + adj;
+    const wrong = [];
+    Object.keys(SYM).forEach((k) => k !== sym && wrong.push(SYM[k] + " " + adj));
+    if (m !== w) wrong.push(SYM[sym] + " " + (f ? m : w));
+    return {
+      set: "Steigerung",
+      fr: answer,
+      de: a + " est ___ que " + b + ".   ( " + sym + "  |  " + m + " )",
+      example: a + " est " + answer + " que " + b + ".",
+      fixed: "forward",
+      label: "Setze ein",
+      wrong: wrong,
+    };
+  });
+})();
+
+const frUnit = (id, name, entries) => ({ id, name, entries: entries.concat(STEIGERUNG, FR_ABKUERZUNGEN) });
+
 const SUBJECTS = [
   {
     id: "franzoesisch",
     name: "Französisch",
     sides: [{ key: "de", name: "Deutsch" }, { key: "fr", name: "Französisch" }],
     units: [
-      { id: "fr-1", name: "Unit 1", entries: FRANZOESISCH_UNIT_1 },
-      { id: "fr-2", name: "Unit 2", entries: FRANZOESISCH_UNIT_2 },
+      frUnit("fr-1", "Unit 1", FRANZOESISCH_UNIT_1),
+      frUnit("fr-2", "Unit 2", FRANZOESISCH_UNIT_2),
     ],
   },
   {

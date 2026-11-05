@@ -37,6 +37,10 @@ function acceptedAnswers(entry, lang) {
   add(entry[lang]);
   if (entry.accept && entry.accept[lang]) entry.accept[lang].forEach(add);
   out.slice().forEach((s) => add(stripParens(s)));
+  if (lang === "fr") out.slice().forEach((s) => {
+    add(expandQc(s));
+    add(shrinkQc(s));
+  });
   // Synonymlisten wie "leicht, einfach": jedes einzelne Wort gilt auch.
   // Ganze Saetze (enden auf . ! ? ...) werden nicht zerlegt.
   out.slice().forEach((s) => {
@@ -46,6 +50,21 @@ function acceptedAnswers(entry, lang) {
   });
   return out;
 }
+
+// qc / qn: Schalter im Setup, ob "qc" und "qn" abgekürzt oder ausgeschrieben angezeigt werden.
+// Als Antwort gelten immer beide Schreibweisen. Die Abkürzungs-Einträge selbst bleiben unverändert.
+const QC_KEY = "lb-qcform";
+const qcFull = () => {
+  try {
+    return localStorage.getItem(QC_KEY) === "full";
+  } catch (e) {
+    return false;
+  }
+};
+const expandQc = (s) => (/\((qc|qn)\)/.test(s) ? s : s.replace(/\bqc\b/g, "quelque chose").replace(/\bqn\b/g, "quelqu'un"));
+const shrinkQc = (s) => s.replace(/quelque chose/g, "qc").replace(/quelqu'un/g, "qn");
+// Text eines Eintrags für die Anzeige
+const shown = (entry, key) => (key === "fr" && qcFull() ? expandQc(entry[key]) : entry[key]);
 
 // "good" = exakt, "near" = nur Gross-/Kleinschreibung anders, "bad" = falsch.
 function grade(input, entry, lang) {
@@ -251,6 +270,17 @@ function showSetup(unit) {
   const settings = loadSettings();
   buildSetList(settings);
   applySettings(settings);
+  $("qc-group").classList.toggle("hidden", subject.id !== "franzoesisch");
+  document.querySelectorAll('input[name="qcform"]').forEach((i) => {
+    i.checked = i.value === (qcFull() ? "full" : "short");
+    i.onchange = () => {
+      try {
+        localStorage.setItem(QC_KEY, i.value);
+      } catch (e) {
+        /* egal */
+      }
+    };
+  });
   paint(subject);
   showScreen("start");
 }
@@ -467,7 +497,7 @@ function nextQuestion() {
 
   const entry = currentEntry();
   const dir = session.settings.direction;
-  const forward = dir === "forward" || (dir === "mixed" && Math.random() < 0.5);
+  const forward = entry.fixed ? entry.fixed === "forward" : dir === "forward" || (dir === "mixed" && Math.random() < 0.5);
   const [ask, answer] = forward ? session.sides : session.sides.slice().reverse();
   session.lang = answer.key;
   session.promptLang = ask.key;
@@ -479,8 +509,8 @@ function nextQuestion() {
   void card.offsetWidth;
   card.classList.add("deal");
 
-  $("prompt-lang").textContent = ask.name;
-  $("prompt").textContent = entry[ask.key];
+  $("prompt-lang").textContent = entry.label || ask.name;
+  $("prompt").textContent = shown(entry, ask.key);
 
   $("feedback").classList.add("hidden");
   updateProgress();
@@ -505,10 +535,10 @@ function nextQuestion() {
 
 function buildChoices(entry) {
   const lang = session.lang;
-  const correct = entry[lang];
-  const others = shuffle(session.pool.filter((w) => w !== entry && w[lang] !== correct))
-    .slice(0, 3)
-    .map((w) => w[lang]);
+  const correct = shown(entry, lang);
+  // Lückenaufgaben haben eigene falsche Antworten (z. B. "moins grand" statt "moins grande").
+  const others = (entry.wrong ? shuffle(entry.wrong) : shuffle(session.pool.filter((w) => w !== entry && w[lang] !== entry[lang])).map((w) => shown(w, lang)))
+    .slice(0, 3);
   const box = $("choice-box");
   box.innerHTML = "";
   shuffle([correct].concat(others)).forEach((text) => {
@@ -533,7 +563,7 @@ function resolve(result) {
   session.answered = true;
 
   const entry = currentEntry();
-  const solution = entry[session.lang];
+  const solution = shown(entry, session.lang);
   const fb = $("feedback");
   session.attempts++;
   if (result !== "bad") session.rights++;
@@ -806,7 +836,7 @@ function subjectCard(subject) {
       const li = document.createElement("li");
       li.dataset.s = w.state;
       li.innerHTML = '<i></i><span class="w-word"></span><span class="w-de"></span>';
-      li.querySelector(".w-word").textContent = w.entry[subject.sides[1].key];
+      li.querySelector(".w-word").textContent = shown(w.entry, subject.sides[1].key);
       li.querySelector(".w-de").textContent = w.entry[subject.sides[0].key];
       list.appendChild(li);
     });
@@ -926,8 +956,8 @@ $("write-form").addEventListener("submit", (e) => {
 
 $("btn-reveal").addEventListener("click", () => {
   // Gross steht nur die Loesung, die Frage rutscht klein nach oben.
-  $("prompt-lang").textContent = currentEntry()[session.promptLang];
-  $("prompt").textContent = currentEntry()[session.lang];
+  $("prompt-lang").textContent = currentEntry().label || current.subject.sides.find((x) => x.key === session.promptLang).name;
+  $("prompt").textContent = shown(currentEntry(), session.lang);
   $("btn-reveal").classList.add("hidden");
   $("reveal-knew").classList.remove("hidden");
 });
