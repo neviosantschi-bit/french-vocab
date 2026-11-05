@@ -2,7 +2,7 @@
 
 // Bewegung: nur Darstellung, keine Logik der Seite.
 //   - Knoepfe ruecken ein kleines Stueck zum Mauszeiger, wenn er in der Naehe ist
-//   - die Buchstaben von "Lernblatt" heben sich wie eine Welle unter dem Zeiger
+//   - die Buchstaben von "pg8" heben sich wie eine Welle unter dem Zeiger
 //   - eine kleine Karte folgt dem Zeiger ueber Ordnern und Unit-Zeilen
 //   - die Quizkarte neigt sich leicht zum Zeiger
 // Alles laeuft in einer einzigen Animationsschleife, die schlaeft, wenn nichts mehr in Bewegung ist.

@@ -371,7 +371,7 @@
     return box;
   }
 
-  // Neben "Lernblatt" und auf jeder Fachseite.
+  // Neben "pg8" und auf jeder Fachseite.
   window.refreshTestHints = function refreshTestHints() {
     const note = $("masthead-note");
     if (note) {
