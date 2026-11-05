@@ -223,14 +223,16 @@ function showFiles(unit) {
   const box = $("files-list");
   box.innerHTML = "";
   (unit.files || []).forEach((f) => {
-    const a = document.createElement("a");
-    a.className = "row";
-    a.href = f.href;
-    a.download = "";
-    a.innerHTML = '<span class="row-name"></span><span class="row-count row-get"></span>';
-    a.querySelector(".row-name").textContent = f.name;
-    a.querySelector(".row-count").textContent = (f.note ? f.note + " · " : "") + "Herunterladen";
-    box.appendChild(a);
+    // Zuerst ansehen (öffnet das PDF in einem neuen Tab), daneben herunterladen.
+    const row = document.createElement("div");
+    row.className = "row file-row";
+    row.innerHTML =
+      '<span class="row-name"></span><span class="row-count"></span>' +
+      '<span class="file-actions"><a class="pill" target="_blank" rel="noopener">Ansehen</a><a class="pill" download>Herunterladen</a></span>';
+    row.querySelector(".row-name").textContent = f.name;
+    row.querySelector(".row-count").textContent = f.note || "";
+    row.querySelectorAll("a").forEach((a) => (a.href = f.href));
+    box.appendChild(row);
   });
   const empty = !(unit.files || []).length;
   box.classList.toggle("hidden", empty);

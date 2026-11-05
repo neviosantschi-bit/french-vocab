@@ -69,7 +69,13 @@ const SUBJECTS = [
     id: "nt",
     name: "Natur und Technik",
     sides: [{ key: "q", name: "Frage" }, { key: "a", name: "Antwort" }],
-    units: [],
+    units: [
+      {
+        id: "nt-kraefte",
+        name: "Kräfte",
+        files: [{ name: "Lernziele und Übungen mit Lösungen", note: "12 Seiten", href: "/downloads/Kraefte_Lernziele_Uebungen.pdf" }],
+      },
+    ],
   },
   {
     id: "rzg",

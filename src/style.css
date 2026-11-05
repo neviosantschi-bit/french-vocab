@@ -1331,3 +1331,10 @@ button, label.chip, .row, .cal-day { -webkit-tap-highlight-color: transparent; t
   .test-dialog { width: calc(100vw - 20px); padding: 20px 18px; }
   .field input[type="date"] { padding-right: 12px; }
 }
+
+/* Dateien: Ansehen und Herunterladen nebeneinander */
+.file-row { flex-wrap: wrap; cursor: default; }
+.file-row:hover { background: transparent; }
+.file-actions { flex: 1 0 100%; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.file-actions .pill { text-decoration: none; color: var(--sheet-ink); }
+.file-actions .pill:hover { background: var(--sheet-ink); color: var(--sheet); }
