@@ -371,7 +371,7 @@
     return box;
   }
 
-  // Neben "pg8" und auf jeder Fachseite.
+  // Neben "PG8" und auf jeder Fachseite.
   window.refreshTestHints = function refreshTestHints() {
     const note = $("masthead-note");
     if (note) {
