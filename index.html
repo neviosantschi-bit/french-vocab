@@ -141,9 +141,18 @@
       <div id="set-list" class="chips"></div>
     </fieldset>
 
-    <fieldset class="group">
+    <fieldset id="dir-group" class="group">
       <legend>In welche Richtung?</legend>
       <div id="direction-options" class="chips"></div>
+    </fieldset>
+
+    <fieldset id="adj-group" class="group hidden">
+      <legend>Adjektiv in welcher Sprache?</legend>
+      <div class="chips">
+        <label class="chip"><input type="radio" name="adjlang" value="fr" checked><span>Französisch</span></label>
+        <label class="chip"><input type="radio" name="adjlang" value="de"><span>Deutsch</span></label>
+        <label class="chip"><input type="radio" name="adjlang" value="mixed"><span>Gemischt</span></label>
+      </div>
     </fieldset>
 
     <fieldset id="qc-group" class="group hidden">

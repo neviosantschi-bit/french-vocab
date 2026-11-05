@@ -20,20 +20,40 @@
 const ADJEKTIV = (() => {
   const SYM = ["−", "+", "="];
   const WORD = { "−": "moins", "+": "plus", "=": "aussi" };
-  // [männlich, weiblich]
+  // [männlich, weiblich, deutsch]
   const ADJ = [
-    ["grand", "grande"], ["petit", "petite"], ["intelligent", "intelligente"], ["sportif", "sportive"], ["gentil", "gentille"],
-    ["fort", "forte"], ["rapide", "rapide"], ["drôle", "drôle"], ["content", "contente"], ["patient", "patiente"],
-    ["heureux", "heureuse"], ["timide", "timide"], ["sympa", "sympa"], ["lent", "lente"], ["jeune", "jeune"],
-    ["beau", "belle"], ["vieux", "vieille"], ["sérieux", "sérieuse"], ["courageux", "courageuse"], ["paresseux", "paresseuse"],
-    ["curieux", "curieuse"], ["actif", "active"], ["cher", "chère"], ["nouveau", "nouvelle"], ["mignon", "mignonne"],
-  ];
+    ["grand", "grande", "gross"],
+    ["petit", "petite", "klein"],
+    ["intelligent", "intelligente", "intelligent"],
+    ["sportif", "sportive", "sportlich"],
+    ["gentil", "gentille", "nett"],
+    ["fort", "forte", "stark"],
+    ["rapide", "rapide", "schnell"],
+    ["drôle", "drôle", "lustig"],
+    ["content", "contente", "zufrieden"],
+    ["patient", "patiente", "geduldig"],
+    ["heureux", "heureuse", "glücklich"],
+    ["timide", "timide", "schüchtern"],
+    ["sympa", "sympa", "sympathisch"],
+    ["lent", "lente", "langsam"],
+    ["jeune", "jeune", "jung"],
+    ["beau", "belle", "schön"],
+    ["vieux", "vieille", "alt"],
+    ["sérieux", "sérieuse", "ernst"],
+    ["courageux", "courageuse", "mutig"],
+    ["paresseux", "paresseuse", "faul"],
+    ["curieux", "curieuse", "neugierig"],
+    ["actif", "active", "aktiv"],
+    ["cher", "chère", "teuer"],
+    ["nouveau", "nouvelle", "neu"],
+    ["mignon", "mignonne", "süss"],
+];
   const FEM = ["Marie", "Julie", "Sophie", "Léa", "Emma", "Camille", "Laura", "Anna", "ma sœur", "ma cousine", "la prof", "ma mère"];
   const MAS = ["Paul", "Marc", "Luc", "Thomas", "Hugo", "Nathan", "Louis", "Max", "mon frère", "mon cousin", "le prof", "mon père"];
   const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
   const out = [];
   for (let i = 0; i < 50; i++) {
-    const [m, w] = ADJ[i % ADJ.length];
+    const [m, w, g] = ADJ[i % ADJ.length];
     const sym = SYM[(i + Math.floor(i / ADJ.length)) % 3];
     const female = i % 2 === 0;
     const a = (female ? FEM : MAS)[(i * 5) % 12];
@@ -46,6 +66,9 @@ const ADJEKTIV = (() => {
       set: "Adjektiv",
       fr: answer,
       de: cap(a) + " est ___ que " + b + ".\n[ " + sym + " ]   " + m,
+      base: cap(a) + " est ___ que " + b + ".",
+      sym: sym,
+      hint: { fr: m, de: g },
       example: cap(a) + " est " + answer + " que " + b + ".",
       fixed: "forward",
       label: "Setze ein",

@@ -270,7 +270,7 @@ function showSetup(unit) {
   const settings = loadSettings();
   buildSetList(settings);
   applySettings(settings);
-  $("qc-group").classList.toggle("hidden", subject.id !== "franzoesisch");
+  syncGroups();
   document.querySelectorAll('input[name="qcform"]').forEach((i) => {
     i.checked = i.value === (qcFull() ? "full" : "short");
     i.onchange = () => {
@@ -361,6 +361,7 @@ function loadSettings() {
         : fallback.direction,
       mode: saved.mode || fallback.mode,
       mix: typeof saved.mix === "number" ? saved.mix : 50,
+      adjLang: ["fr", "de", "mixed"].includes(saved.adjLang) ? saved.adjLang : "fr",
     };
   } catch (e) {
     return fallback;
@@ -387,10 +388,11 @@ function buildSetList(settings) {
     input.checked = settings.sets.includes(name);
     // "Adjektiv" und die Objectifs schliessen sich aus: das eine wählen, das andere geht weg.
     input.addEventListener("change", () => {
-      if (!input.checked) return;
+      if (!input.checked) return syncGroups();
       box.querySelectorAll("input").forEach((o) => {
         if (o !== input && (name === ADJ_SET || o.value === ADJ_SET)) o.checked = false;
       });
+      syncGroups();
     });
     box.appendChild(label);
   });
@@ -402,10 +404,22 @@ function readSettings() {
     direction: document.querySelector('input[name="direction"]:checked').value,
     mode: document.querySelector('input[name="mode"]:checked').value,
     mix: mixPct,
+    adjLang: (document.querySelector('input[name="adjlang"]:checked') || { value: "fr" }).value,
   };
 }
 
+// Bei "Adjektiv" gibt es keine Richtung und kein qc/qn, dafür die Sprache des Adjektivs.
+function syncGroups() {
+  const adj = Array.from($("set-list").querySelectorAll("input:checked")).some((i) => i.value === ADJ_SET);
+  $("dir-group").classList.toggle("hidden", adj);
+  $("adj-group").classList.toggle("hidden", !adj);
+  $("qc-group").classList.toggle("hidden", adj || !current.subject || current.subject.id !== "franzoesisch");
+}
+
 function applySettings(s) {
+  document.querySelectorAll('input[name="adjlang"]').forEach((i) => {
+    i.checked = i.value === (s.adjLang || "fr");
+  });
   mixPct = typeof s.mix === "number" ? s.mix : 50;
   const lab = document.querySelector('input[name="direction"][value="mixed"] + span');
   if (lab) lab.textContent = mixPct === 50 ? "Gemischt" : "Gemischt (" + mixPct + " / " + (100 - mixPct) + ")";
@@ -556,6 +570,12 @@ function nextQuestion() {
 
   $("prompt-lang").textContent = entry.label || ask.name;
   $("prompt").textContent = shown(entry, ask.key);
+  if (entry.hint) {
+    // Adjektiv-Aufgabe: das Adjektiv im Hinweis auf Französisch oder Deutsch zeigen
+    const al = session.settings.adjLang || "fr";
+    const hl = al === "mixed" ? (Math.random() < 0.5 ? "fr" : "de") : al;
+    $("prompt").textContent = entry.base + "\n[ " + entry.sym + " ]   " + entry.hint[hl];
+  }
   $("prompt").classList.toggle("gap", !!entry.fixed);
 
   $("feedback").classList.add("hidden");
