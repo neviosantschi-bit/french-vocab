@@ -189,12 +189,11 @@
       const b = document.createElement("button");
       b.type = "button";
       b.className = "go ghost td-unit";
-      b.textContent = unit.name + (unit.game ? " spielen" : unit.entries && unit.entries.length ? " üben" : " öffnen");
+      b.textContent = unit.name + (unit.entries && unit.entries.length ? " üben" : " öffnen");
       b.addEventListener("click", () => {
         dlg.close();
         showUnits(subject);
-        if (unit.game) showGame(unit);
-        else if (unit.entries && unit.entries.length) showSetup(unit);
+        if (unit.entries && unit.entries.length) showSetup(unit);
         else showFiles(unit);
       });
       box.appendChild(b);

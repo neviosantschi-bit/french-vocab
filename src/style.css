@@ -2,7 +2,6 @@
 @import "@fontsource/atkinson-hyperlegible/400.css";
 @import "@fontsource/atkinson-hyperlegible/400-italic.css";
 @import "@fontsource/atkinson-hyperlegible/700.css";
-@import "./kraefte.css";
 
 /* =====================================================================
    Karteikarte: Register-Reiter, Karteikarten und liniertes Papier.
@@ -61,7 +60,6 @@
 [data-subject="nt"]           { --c: #2d7656; --on: #ffffff; }
 [data-subject="rzg"]          { --c: #4f9a72; --on: #191c3d; }
 [data-subject="tests"]        { --c: #2a2e5c; --on: #ffffff; }
-[data-subject="spiel"]        { --c: #0a1020; --on: #e6eefc; }
 
 /* Jedes Fach hat sein eigenes Linienmuster (public/patterns). Nur auf den Fachseiten.
    Die Linien nehmen die Schriftfarbe. */
@@ -77,7 +75,6 @@ body[data-subject]::before {
   mask: var(--pattern) center / cover no-repeat;
 }
 body[data-subject] .screen { position: relative; z-index: 1; }
-body[data-subject="spiel"]::before { display: none; }
 
 [data-subject="franzoesisch"] { --pattern: url("/patterns/franzoesisch.svg"); }
 [data-subject="englisch"]     { --pattern: url("/patterns/englisch.svg"); }

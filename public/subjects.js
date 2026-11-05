@@ -7,7 +7,6 @@
 // units = Units (Prüfungsstoff) des Fachs. Jede Unit hat eine Liste von
 //         Einträgen; das Feld "set" teilt eine Unit in Teile (z. B. Objectif 1).
 //
-// game  = Unit, die ein Lernspiel öffnet (z. B. "kraefte" = public/kraefte/).
 // files = Unit ohne Karten, nur Downloads: [{ name, note, href }] (PDFs in public/downloads).
 //         Eine Unit ohne Karten und ohne Dateien zeigt "Noch leer" und zählt nicht.
 //
@@ -70,10 +69,7 @@ const SUBJECTS = [
     id: "nt",
     name: "Natur und Technik",
     sides: [{ key: "q", name: "Frage" }, { key: "a", name: "Antwort" }],
-    units: [
-      // game = Lernspiel: öffnet das Spiel in public/kraefte/ statt Karten oder Dateien.
-      { id: "nt-kraefte", name: "Kräfte", game: "kraefte" },
-    ],
+    units: [],
   },
   {
     id: "rzg",
