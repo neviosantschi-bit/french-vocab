@@ -302,6 +302,29 @@ function chip(type, name, value, text, note) {
   return label;
 }
 
+// Bei "Gemischt": wie viel Prozent der Fragen in der ersten Richtung kommen (Rest umgekehrt).
+let mixPct = 50;
+
+function openMix() {
+  const [a, b] = current.subject.sides;
+  const slider = $("mix-slider");
+  const paint = () => {
+    mixPct = +slider.value;
+    $("mix-a").textContent = a.name + " → " + b.name;
+    $("mix-b").textContent = b.name + " → " + a.name;
+    $("mix-a-pct").textContent = mixPct + " %";
+    $("mix-b-pct").textContent = 100 - mixPct + " %";
+    slider.style.setProperty("--p", mixPct + "%");
+    const lab = document.querySelector('input[name="direction"][value="mixed"] + span');
+    if (lab) lab.textContent = "Gemischt (" + mixPct + " / " + (100 - mixPct) + ")";
+  };
+  slider.value = String(mixPct);
+  slider.oninput = paint;
+  $("mix-done").onclick = () => $("mix-dialog").close();
+  paint();
+  if (typeof $("mix-dialog").showModal === "function" && !$("mix-dialog").open) $("mix-dialog").showModal();
+}
+
 function buildDirections(subject) {
   const [a, b] = subject.sides;
   const box = $("direction-options");
@@ -310,7 +333,12 @@ function buildDirections(subject) {
     ["forward", a.name + " → " + b.name],
     ["back", b.name + " → " + a.name],
     ["mixed", "Gemischt"],
-  ].forEach(([value, text]) => box.appendChild(chip("radio", "direction", value, text)));
+  ].forEach(([value, text]) => {
+    const c = chip("radio", "direction", value, text);
+    // Gemischt (neu gewählt oder nochmal angetippt): Regler zum Einstellen öffnen
+    if (value === "mixed") c.querySelector("input").addEventListener("click", openMix);
+    box.appendChild(c);
+  });
 }
 
 /* ---------------- Einstellungen ---------------- */
@@ -319,17 +347,20 @@ function buildDirections(subject) {
 const storeKey = () => "lb-settings:" + current.unit.id;
 
 function loadSettings() {
-  const fallback = { sets: current.sets.slice(), direction: "forward", mode: "write" };
+  mixPct = 50;
+  const fallback = { sets: current.sets.filter((n) => n !== ADJ_SET), direction: "forward", mode: "write" };
   try {
     const saved = JSON.parse(localStorage.getItem(storeKey()));
     if (!saved) return fallback;
-    const sets = (saved.sets || []).filter((s) => current.sets.includes(s));
+    let sets = (saved.sets || []).filter((s) => current.sets.includes(s));
+    if (sets.length > 1 && sets.includes(ADJ_SET)) sets = sets.filter((s) => s !== ADJ_SET);
     return {
       sets: sets.length ? sets : fallback.sets,
       direction: ["forward", "back", "mixed"].includes(saved.direction)
         ? saved.direction
         : fallback.direction,
       mode: saved.mode || fallback.mode,
+      mix: typeof saved.mix === "number" ? saved.mix : 50,
     };
   } catch (e) {
     return fallback;
@@ -344,13 +375,23 @@ function saveSettings(s) {
   }
 }
 
+const ADJ_SET = "Adjektiv";
+
 function buildSetList(settings) {
   const box = $("set-list");
   box.innerHTML = "";
   current.sets.forEach((name) => {
     const count = current.unit.entries.filter((w) => setOf(w) === name).length;
     const label = chip("checkbox", "set", name, name, String(count));
-    label.querySelector("input").checked = settings.sets.includes(name);
+    const input = label.querySelector("input");
+    input.checked = settings.sets.includes(name);
+    // "Adjektiv" und die Objectifs schliessen sich aus: das eine wählen, das andere geht weg.
+    input.addEventListener("change", () => {
+      if (!input.checked) return;
+      box.querySelectorAll("input").forEach((o) => {
+        if (o !== input && (name === ADJ_SET || o.value === ADJ_SET)) o.checked = false;
+      });
+    });
     box.appendChild(label);
   });
 }
@@ -360,10 +401,14 @@ function readSettings() {
     sets: Array.from($("set-list").querySelectorAll("input:checked")).map((i) => i.value),
     direction: document.querySelector('input[name="direction"]:checked').value,
     mode: document.querySelector('input[name="mode"]:checked').value,
+    mix: mixPct,
   };
 }
 
 function applySettings(s) {
+  mixPct = typeof s.mix === "number" ? s.mix : 50;
+  const lab = document.querySelector('input[name="direction"][value="mixed"] + span');
+  if (lab) lab.textContent = mixPct === 50 ? "Gemischt" : "Gemischt (" + mixPct + " / " + (100 - mixPct) + ")";
   document.querySelectorAll('input[name="direction"]').forEach((i) => {
     i.checked = i.value === s.direction;
   });
@@ -497,7 +542,7 @@ function nextQuestion() {
 
   const entry = currentEntry();
   const dir = session.settings.direction;
-  const forward = entry.fixed ? entry.fixed === "forward" : dir === "forward" || (dir === "mixed" && Math.random() < 0.5);
+  const forward = entry.fixed ? entry.fixed === "forward" : dir === "forward" || (dir === "mixed" && Math.random() < (typeof session.settings.mix === "number" ? session.settings.mix : 50) / 100);
   const [ask, answer] = forward ? session.sides : session.sides.slice().reverse();
   session.lang = answer.key;
   session.promptLang = ask.key;
@@ -511,6 +556,7 @@ function nextQuestion() {
 
   $("prompt-lang").textContent = entry.label || ask.name;
   $("prompt").textContent = shown(entry, ask.key);
+  $("prompt").classList.toggle("gap", !!entry.fixed);
 
   $("feedback").classList.add("hidden");
   updateProgress();

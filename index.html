@@ -230,6 +230,18 @@
   </div>
 </main>
 
+<!-- Gemischt: Verhältnis der Richtungen -->
+<dialog id="mix-dialog" class="nudge" aria-labelledby="mix-title">
+  <form method="dialog">
+    <h2 id="mix-title">Wie gemischt?</h2>
+    <p>Wie oft soll welche Richtung drankommen?</p>
+    <div class="mix-row"><span id="mix-a"></span><b id="mix-a-pct"></b></div>
+    <input id="mix-slider" class="mix-slider" type="range" min="0" max="100" step="5" value="50" aria-label="Anteil der ersten Richtung in Prozent">
+    <div class="mix-row"><span id="mix-b"></span><b id="mix-b-pct"></b></div>
+    <button id="mix-done" class="go ink" value="ok">Fertig</button>
+  </form>
+</dialog>
+
 <!-- Test eintragen oder aendern -->
 <dialog id="test-form" class="nudge test-dialog" aria-labelledby="tf-heading">
   <form id="tf" novalidate>

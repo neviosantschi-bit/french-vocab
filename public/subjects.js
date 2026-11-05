@@ -13,58 +13,49 @@
 // Neue Unit: eigene Datei in public/ anlegen, in index.html vor subjects.js
 // laden und hier unter "units" eintragen.
 
-// Abkürzungen, die in jeder französischen Unit vorkommen (qc, qn). Sie hängen automatisch
-// als letzter Teil an jede Unit: neue Französisch-Units mit frUnit(...) anlegen.
-const FR_ABKUERZUNGEN = [
-  { set: "Abkürzungen", fr: "quelque chose (qc)", de: "etwas (etw.)", example: "J'achète qc. = Ich kaufe etwas.",
-    accept: { fr: ["quelque chose", "qc"], de: ["etwas", "etw."] } },
-  { set: "Abkürzungen", fr: "quelqu'un (qn)", de: "jemand (jmd.)", example: "J'aide qn. = Ich helfe jemandem.",
-    accept: { fr: ["quelqu'un", "qn"], de: ["jemand", "jmd.", "jmdn.", "jmdm."] } },
-];
-// Steigerung: "Marie est ___ que Paul." mit − (moins), + (plus), = (aussi) und einem Adjektiv.
-// In der Klammer steht das Zeichen und das Adjektiv (männlich); gesucht ist z. B. "moins grande".
+// Adjektiv (Steigerung): "Marie est ___ que Paul." mit − (moins), + (plus), = (aussi) und einem Adjektiv.
 // Gefragt wird die Lücke (z. B. "moins grande"); weiblich, wenn die erste Person weiblich ist.
 // fixed = Richtung ist immer Aufgabe → Lösung, label = Titel der Karte, wrong = falsche Auswahl bei "Auswählen".
-const STEIGERUNG = (() => {
-  const SYM = { "−": "moins", "+": "plus", "=": "aussi" };
-  // [Symbol, Person 1, weiblich?, Adjektiv (m), Adjektiv (w), Person 2]
-  const items = [
-    ["−", "Marie", 1, "grand", "grande", "Paul"],
-    ["+", "Paul", 0, "sportif", "sportive", "Marie"],
-    ["=", "Julie", 1, "intelligent", "intelligente", "Léa"],
-    ["−", "Marc", 0, "petit", "petite", "Luc"],
-    ["+", "Sophie", 1, "fort", "forte", "Thomas"],
-    ["=", "Luc", 0, "gentil", "gentille", "Paul"],
-    ["−", "Emma", 1, "rapide", "rapide", "Marie"],
-    ["+", "Thomas", 0, "drôle", "drôle", "Julie"],
-    ["=", "Ma sœur", 1, "content", "contente", "mon frère"],
-    ["−", "Mon frère", 0, "patient", "patiente", "ma sœur"],
-    ["+", "Léa", 1, "heureux", "heureuse", "Sophie"],
-    ["=", "Paul", 0, "timide", "timide", "Marc"],
-    ["+", "La prof", 1, "sympa", "sympa", "le prof"],
-    ["−", "Marie", 1, "lent", "lente", "Julie"],
-    ["+", "Luc", 0, "jeune", "jeune", "Emma"],
-    ["=", "Sophie", 1, "beau", "belle", "Léa"],
+// Neue Französisch-Units mit frUnit(...) anlegen, dann ist der Teil "Adjektiv" automatisch dabei.
+const ADJEKTIV = (() => {
+  const SYM = ["−", "+", "="];
+  const WORD = { "−": "moins", "+": "plus", "=": "aussi" };
+  // [männlich, weiblich]
+  const ADJ = [
+    ["grand", "grande"], ["petit", "petite"], ["intelligent", "intelligente"], ["sportif", "sportive"], ["gentil", "gentille"],
+    ["fort", "forte"], ["rapide", "rapide"], ["drôle", "drôle"], ["content", "contente"], ["patient", "patiente"],
+    ["heureux", "heureuse"], ["timide", "timide"], ["sympa", "sympa"], ["lent", "lente"], ["jeune", "jeune"],
+    ["beau", "belle"], ["vieux", "vieille"], ["sérieux", "sérieuse"], ["courageux", "courageuse"], ["paresseux", "paresseuse"],
+    ["curieux", "curieuse"], ["actif", "active"], ["cher", "chère"], ["nouveau", "nouvelle"], ["mignon", "mignonne"],
   ];
-  return items.map(([sym, a, f, m, w, b]) => {
-    const adj = f ? w : m;
-    const answer = SYM[sym] + " " + adj;
-    const wrong = [];
-    Object.keys(SYM).forEach((k) => k !== sym && wrong.push(SYM[k] + " " + adj));
-    if (m !== w) wrong.push(SYM[sym] + " " + (f ? m : w));
-    return {
-      set: "Steigerung",
+  const FEM = ["Marie", "Julie", "Sophie", "Léa", "Emma", "Camille", "Laura", "Anna", "ma sœur", "ma cousine", "la prof", "ma mère"];
+  const MAS = ["Paul", "Marc", "Luc", "Thomas", "Hugo", "Nathan", "Louis", "Max", "mon frère", "mon cousin", "le prof", "mon père"];
+  const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  const out = [];
+  for (let i = 0; i < 50; i++) {
+    const [m, w] = ADJ[i % ADJ.length];
+    const sym = SYM[(i + Math.floor(i / ADJ.length)) % 3];
+    const female = i % 2 === 0;
+    const a = (female ? FEM : MAS)[(i * 5) % 12];
+    const b = (i % 4 < 2 ? MAS : FEM)[(i * 7 + 3) % 12];
+    const adj = female ? w : m;
+    const answer = WORD[sym] + " " + adj;
+    const wrong = SYM.filter((k) => k !== sym).map((k) => WORD[k] + " " + adj);
+    if (m !== w) wrong.push(WORD[sym] + " " + (female ? m : w));
+    out.push({
+      set: "Adjektiv",
       fr: answer,
-      de: a + " est ___ que " + b + ".   ( " + sym + "  |  " + m + " )",
-      example: a + " est " + answer + " que " + b + ".",
+      de: cap(a) + " est ___ que " + b + ".\n[ " + sym + " ]   " + m,
+      example: cap(a) + " est " + answer + " que " + b + ".",
       fixed: "forward",
       label: "Setze ein",
       wrong: wrong,
-    };
-  });
+    });
+  }
+  return out;
 })();
 
-const frUnit = (id, name, entries) => ({ id, name, entries: entries.concat(STEIGERUNG, FR_ABKUERZUNGEN) });
+const frUnit = (id, name, entries) => ({ id, name, entries: entries.concat(ADJEKTIV) });
 
 const SUBJECTS = [
   {

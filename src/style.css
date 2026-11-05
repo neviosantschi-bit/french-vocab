@@ -1338,3 +1338,13 @@ button, label.chip, .row, .cal-day { -webkit-tap-highlight-color: transparent; t
 .file-actions { flex: 1 0 100%; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
 .file-actions .pill { text-decoration: none; color: var(--sheet-ink); }
 .file-actions .pill:hover { background: var(--sheet-ink); color: var(--sheet); }
+
+/* Lückenaufgabe (Adjektiv): kleinere Schrift, zwei Zeilen: Satz, dann Zeichen und Adjektiv */
+.ask-prompt.gap { font-size: clamp(1.4rem, 4.2vw, 2.1rem); line-height: 1.25; white-space: pre-line; letter-spacing: 0; font-stretch: 100%; }
+.ask-prompt.gap::first-line { font-weight: 700; }
+@media (max-width: 640px) { .ask-prompt.gap { font-size: clamp(1.3rem, 6vw, 1.7rem); } }
+
+/* Gemischt: Regler im Fenster */
+.mix-row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; color: var(--sheet-ink); }
+.mix-row b { font-family: var(--display); font-size: 1.5rem; font-stretch: 115%; }
+.mix-slider { width: 100%; height: 36px; accent-color: var(--sheet-ink); cursor: pointer; }
